@@ -1,5 +1,10 @@
 # Xbim.WexBlazor
 
+[![NuGet](https://img.shields.io/nuget/v/Xbim.WexBlazor.svg)](https://www.nuget.org/packages/Xbim.WexBlazor/)
+[![NuGet Downloads](https://img.shields.io/nuget/dt/Xbim.WexBlazor.svg)](https://www.nuget.org/packages/Xbim.WexBlazor/)
+[![Build Status](https://github.com/Ibrahim5aad/Xbim.WexBlazor/actions/workflows/publish-nuget.yml/badge.svg)](https://github.com/Ibrahim5aad/Xbim.WexBlazor/actions/workflows/publish-nuget.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 A Blazor component library that wraps the @xbim/viewer JavaScript library for use in Blazor WebAssembly applications. This library allows you to display 3D building models in the wexBIM format.
 
 ## Project Structure
@@ -19,25 +24,23 @@ A Blazor component library that wraps the @xbim/viewer JavaScript library for us
 - xBIM Viewer component for displaying wexBIM 3D models
 - Controls for loading models, zooming, and manipulating the view
 
+## Installation
+
+Install the package from NuGet:
+
+```bash
+dotnet add package Xbim.WexBlazor
+```
+
+Or via the Visual Studio Package Manager:
+
+```
+Install-Package Xbim.WexBlazor
+```
+
 ## Getting Started
 
-1. Clone the repository
-2. Open the solution in Visual Studio or your preferred IDE
-3. Build the solution
-4. Run the sample project
-
-```bash
-dotnet build
-dotnet run --project src/Xbim.WexBlazor.Sample/Xbim.WexBlazor.Sample.csproj
-```
-
-## Using Components
-
-You can use the components from this library in your Blazor WebAssembly projects by adding a reference to the Xbim.WexBlazor project:
-
-```bash
-dotnet add reference path/to/Xbim.WexBlazor.csproj
-```
+### Using the Components
 
 Then add the following to your `_Imports.razor` file:
 
@@ -73,6 +76,17 @@ Example usage of the xBIM Viewer component:
 ## wexBIM Format
 
 The viewer requires 3D models in the wexBIM format. You can convert IFC models to wexBIM using tools from the [XbimEssentials](https://github.com/xBimTeam/XbimEssentials) library.
+
+## Development
+
+To build and run the sample project:
+
+```bash
+git clone https://github.com/Ibrahim5aad/Xbim.WexBlazor.git
+cd Xbim.WexBlazor
+dotnet build
+dotnet run --project src/Xbim.WexBlazor.Sample/Xbim.WexBlazor.Sample.csproj
+```
 
 ## License
 
