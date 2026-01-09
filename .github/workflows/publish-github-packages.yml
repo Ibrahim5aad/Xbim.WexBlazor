@@ -16,6 +16,16 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
+    
+    - name: Generate dev version
+      id: get_version
+      run: |
+        DATE=$(date +%Y%m%d)
+        COMMIT_SHORT=$(git rev-parse --short HEAD)
+        VERSION="0.0.0-dev.$DATE.$COMMIT_SHORT"
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+        echo "Publishing dev version: $VERSION"
+      shell: bash
       
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
@@ -35,6 +45,12 @@ jobs:
     
     - name: Compile TypeScript
       run: npx tsc --project src/Xbim.WexBlazor/tsconfig.json
+    
+    - name: Update version in csproj
+      run: |
+        sed -i 's/<Version>.*<\/Version>/<Version>${{ steps.get_version.outputs.version }}<\/Version>/' src/Xbim.WexBlazor/Xbim.WexBlazor.csproj
+        echo "Updated version to ${{ steps.get_version.outputs.version }}"
+      shell: bash
       
     - name: Build
       run: dotnet build --configuration Release --no-restore

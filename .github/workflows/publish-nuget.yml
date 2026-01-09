@@ -2,18 +2,9 @@ name: Publish to NuGet
 
 on:
   push:
-    branches:
-      - main
     tags:
       - 'v*.*.*'
-  release:
-    types: [published]
   workflow_dispatch:
-    inputs:
-      version:
-        description: 'Version to publish (e.g., 1.0.0)'
-        required: true
-        type: string
 
 jobs:
   publish:
@@ -22,6 +13,19 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
+    
+    - name: Extract version from tag
+      id: get_version
+      run: |
+        if [ "${{ github.ref_type }}" == "tag" ]; then
+          VERSION=${GITHUB_REF#refs/tags/v}
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Publishing version: $VERSION"
+        else
+          echo "version=0.0.0-dev" >> $GITHUB_OUTPUT
+          echo "Manual trigger - using dev version"
+        fi
+      shell: bash
       
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
@@ -41,6 +45,12 @@ jobs:
     
     - name: Compile TypeScript
       run: npx tsc --project src/Xbim.WexBlazor/tsconfig.json
+    
+    - name: Update version in csproj
+      run: |
+        sed -i 's/<Version>.*<\/Version>/<Version>${{ steps.get_version.outputs.version }}<\/Version>/' src/Xbim.WexBlazor/Xbim.WexBlazor.csproj
+        echo "Updated version to ${{ steps.get_version.outputs.version }}"
+      shell: bash
       
     - name: Build
       run: dotnet build --configuration Release --no-restore
