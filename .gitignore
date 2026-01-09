@@ -1,6 +1,5 @@
 ## TypeScript generated files
-**/wwwroot/js/*.js
-**/wwwroot/js/*.js.map
+## NOTE: We commit these so GitHub Actions can include them in NuGet package
 
 ## Node.js
 node_modules/
