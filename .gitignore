@@ -57,6 +57,7 @@ publish/
 project.lock.json
 project.fragment.lock.json
 artifacts/
+test-pack/
 
 ## NuGet
 *.nupkg

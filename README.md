@@ -74,16 +74,6 @@ Example usage of the xBIM Viewer component:
 
 The viewer requires 3D models in the wexBIM format. You can convert IFC models to wexBIM using tools from the [XbimEssentials](https://github.com/xBimTeam/XbimEssentials) library.
 
-## Creating Your Own JavaScript Wrappers
-
-To create a wrapper for a JavaScript library:
-
-1. Create a JavaScript module in `wwwroot/js/`
-2. Create an interop service in `Interop/` extending `JsInteropBase`
-3. Create a Blazor component in `Components/` that uses the interop service
-
-See the XbimViewerComponent example for reference.
-
 ## License
 
 MIT
