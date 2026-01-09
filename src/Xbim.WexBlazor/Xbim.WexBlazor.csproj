@@ -1,0 +1,64 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TypeScriptCompileBlocked>false</TypeScriptCompileBlocked>
+    <TypeScriptToolsVersion>Latest</TypeScriptToolsVersion>
+  </PropertyGroup>
+
+
+  <ItemGroup>
+    <SupportedPlatform Include="browser" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="9.0.1" />
+    <PackageReference Include="Microsoft.TypeScript.MSBuild" Version="5.4.3">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.Web.LibraryManager.Build" Version="3.0.71" />
+  </ItemGroup>
+
+  <!-- Include the generated JavaScript files in the package -->
+  <ItemGroup>
+    <Content Update="wwwroot\js\**\*.*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <!-- TypeScript configuration -->
+  <PropertyGroup>
+    <TypeScriptSourceRoot>$(MSBuildProjectDirectory)\wwwroot\ts</TypeScriptSourceRoot>
+    <TypeScriptCompileOnSaveEnabled>True</TypeScriptCompileOnSaveEnabled>
+    <TypeScriptRemoveComments>True</TypeScriptRemoveComments>
+    <TypeScriptSourceMap>True</TypeScriptSourceMap>
+    <TypeScriptTarget>ES2015</TypeScriptTarget>
+    <TypeScriptModuleKind>ES2015</TypeScriptModuleKind>
+    <TypeScriptNoImplicitAny>True</TypeScriptNoImplicitAny>
+    <TypeScriptGeneratesDeclarations>False</TypeScriptGeneratesDeclarations>
+    <TypeScriptOutFile></TypeScriptOutFile>
+    <TypeScriptOutDir>$(MSBuildProjectDirectory)\wwwroot\js</TypeScriptOutDir>
+    <TypeScriptMapRoot></TypeScriptMapRoot>
+    <TypeScriptJSXEmit>None</TypeScriptJSXEmit>
+  </PropertyGroup>
+
+  <!-- Include TypeScript files for compilation -->
+  <ItemGroup>
+    <TypeScriptCompile Include="wwwroot\ts\**\*.ts" />
+  </ItemGroup>
+  <ItemGroup>
+    <_ContentIncludedByDefault Remove="wwwroot\js\xbim-module.js" />
+    <_ContentIncludedByDefault Remove="wwwroot\js\xbim-module.js.map" />
+    <_ContentIncludedByDefault Remove="wwwroot\js\xbimViewerInterop.js" />
+    <_ContentIncludedByDefault Remove="wwwroot\js\xbimViewerInterop.js.map" />
+  </ItemGroup>
+
+  <!-- Make sure the JS output directory exists -->
+  <Target Name="EnsureJsDirectoryExists" BeforeTargets="BeforeBuild">
+    <MakeDir Directories="$(MSBuildProjectDirectory)\wwwroot\js" />
+  </Target>
+
+</Project>

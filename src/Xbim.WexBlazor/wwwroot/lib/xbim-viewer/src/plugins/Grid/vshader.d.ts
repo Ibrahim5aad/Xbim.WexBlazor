@@ -1,0 +1,1 @@
+export declare const vshader = "attribute vec3 coordinates;\n\n\nuniform mat4 uMvMatrix;\nuniform mat4 uPMatrix;\n\nvoid main(void) {\n gl_Position = uPMatrix * uMvMatrix * vec4(coordinates, 1.0);\n}";

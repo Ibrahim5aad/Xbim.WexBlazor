@@ -1,0 +1,246 @@
+.xbim-toolbar {
+    position: absolute;
+    display: flex;
+    gap: 4px;
+    padding: 8px;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    z-index: 1000;
+    transition: all 0.2s ease;
+}
+
+.xbim-toolbar-top {
+    top: 12px;
+    flex-direction: row;
+}
+
+.xbim-toolbar-bottom {
+    bottom: 12px;
+    flex-direction: row;
+}
+
+.xbim-toolbar-left {
+    left: 12px;
+    flex-direction: column;
+}
+
+.xbim-toolbar-right {
+    right: 12px;
+    flex-direction: column;
+}
+
+.xbim-toolbar-top.xbim-toolbar-start,
+.xbim-toolbar-bottom.xbim-toolbar-start {
+    left: 12px;
+}
+
+.xbim-toolbar-top.xbim-toolbar-center,
+.xbim-toolbar-bottom.xbim-toolbar-center {
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.xbim-toolbar-top.xbim-toolbar-end,
+.xbim-toolbar-bottom.xbim-toolbar-end {
+    right: 12px;
+}
+
+.xbim-toolbar-left.xbim-toolbar-start,
+.xbim-toolbar-right.xbim-toolbar-start {
+    top: 12px;
+}
+
+.xbim-toolbar-left.xbim-toolbar-center,
+.xbim-toolbar-right.xbim-toolbar-center {
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.xbim-toolbar-left.xbim-toolbar-end,
+.xbim-toolbar-right.xbim-toolbar-end {
+    bottom: 12px;
+}
+
+.xbim-toolbar-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 36px;
+    height: 36px;
+    padding: 8px;
+    background: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: #333;
+    font-size: 16px;
+}
+
+.xbim-toolbar-btn:hover:not(.disabled) {
+    background: #f5f5f5;
+    border-color: #0066cc;
+    color: #0066cc;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.xbim-toolbar-btn:active:not(.disabled) {
+    transform: translateY(0);
+    box-shadow: none;
+}
+
+.xbim-toolbar-btn.disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.xbim-toolbar-toggle.active {
+    background: #0066cc;
+    border-color: #0066cc;
+    color: white;
+}
+
+.xbim-toolbar-toggle.active:hover {
+    background: #0052a3;
+    border-color: #0052a3;
+}
+
+.xbim-toolbar-dropdown {
+    position: relative;
+}
+
+.xbim-toolbar-dropdown-toggle {
+    gap: 4px;
+    padding-left: 12px;
+    padding-right: 12px;
+}
+
+.xbim-toolbar-label {
+    font-size: 14px;
+    font-weight: 500;
+    white-space: nowrap;
+    margin: 0 4px;
+}
+
+.xbim-toolbar-dropdown-menu {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    min-width: 180px;
+    background: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    padding: 4px;
+    display: none;
+    z-index: 1001;
+}
+
+.xbim-toolbar-dropdown-menu.show {
+    display: block;
+}
+
+.xbim-toolbar-dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 8px 12px;
+    background: transparent;
+    border: none;
+    border-radius: 4px;
+    text-align: left;
+    cursor: pointer;
+    transition: background 0.2s ease;
+    color: #333;
+    font-size: 14px;
+}
+
+.xbim-toolbar-dropdown-item:hover:not(.disabled) {
+    background: #f5f5f5;
+}
+
+.xbim-toolbar-dropdown-item.disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.xbim-toolbar-left .xbim-toolbar-dropdown-menu {
+    left: calc(100% + 4px);
+    top: 0;
+}
+
+.xbim-toolbar-right .xbim-toolbar-dropdown-menu {
+    right: calc(100% + 4px);
+    left: auto;
+    top: 0;
+}
+
+.xbim-toolbar-group {
+    display: flex;
+    gap: 2px;
+    padding: 10px 4px 4px 4px;
+    background: rgba(0, 102, 204, 0.08);
+    border: 1px solid rgba(0, 102, 204, 0.2);
+    border-radius: 6px;
+    position: relative;
+    border-top: none;
+}
+
+.xbim-toolbar-group::before {
+    left: -1px;
+    width: calc(50% - 7ch);
+    border-radius: 6px 0 0 0;
+}
+
+.xbim-toolbar-group::after {
+    left: calc(50% + 7ch);
+    right: -1px;
+    border-radius: 0 6px 0 0;
+}
+
+.xbim-toolbar-group-label {
+    position: absolute;
+    top: -4px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 0;
+    font-size: 9px;
+    font-weight: 600;
+    color: #0066cc;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.xbim-toolbar-group-items {
+    display: flex;
+    gap: 2px;
+}
+
+.xbim-toolbar-top .xbim-toolbar-group,
+.xbim-toolbar-bottom .xbim-toolbar-group {
+    flex-direction: row;
+}
+
+.xbim-toolbar-top .xbim-toolbar-group-items,
+.xbim-toolbar-bottom .xbim-toolbar-group-items {
+    flex-direction: row;
+}
+
+.xbim-toolbar-left .xbim-toolbar-group,
+.xbim-toolbar-right .xbim-toolbar-group {
+    flex-direction: column;
+}
+
+.xbim-toolbar-left .xbim-toolbar-group-items,
+.xbim-toolbar-right .xbim-toolbar-group-items {
+    flex-direction: column;
+}
+
+.xbim-toolbar-group .xbim-toolbar-btn {
+    margin: 0;
+}
+

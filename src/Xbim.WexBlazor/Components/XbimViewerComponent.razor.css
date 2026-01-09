@@ -1,0 +1,12 @@
+.xbim-viewer-container {
+    display: block;
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+}
+
+canvas {
+    width: 100%;
+    height: 100%;
+} 

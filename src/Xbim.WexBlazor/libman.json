@@ -1,0 +1,11 @@
+{
+  "version": "1.0",
+  "defaultProvider": "cdnjs",
+  "libraries": [
+    {
+      "library": "@xbim/viewer@latest",
+      "destination": "wwwroot/lib/xbim-viewer",
+      "provider": "jsdelivr"
+    }
+  ]
+} 

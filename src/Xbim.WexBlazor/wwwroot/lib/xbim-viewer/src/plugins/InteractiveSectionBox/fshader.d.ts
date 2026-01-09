@@ -1,0 +1,1 @@
+export declare const fshader = "precision highp float;\n\nuniform mat4 transformations[6];\n\nuniform mat4 inverseProjectionMatrix;\nuniform vec2 viewportDimensions;\nuniform mat4 uPMatrix;\n\nvarying vec4 vColor;\nvarying mat4 planeTrsf;\nvarying vec3 FragPos;\n\nvoid main(void) {\n gl_FragColor = vColor;\n}";

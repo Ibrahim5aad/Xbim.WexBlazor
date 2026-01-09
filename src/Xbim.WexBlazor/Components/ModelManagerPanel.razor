@@ -1,0 +1,168 @@
+@using Xbim.WexBlazor.Models
+
+@if (IsVisible)
+{
+    <div class="model-manager-panel @PositionClass @(IsMinimized ? "minimized" : "")">
+        <div class="model-manager-header">
+            <h6 class="model-manager-title">
+                <i class="bi bi-layers"></i> Loaded Models (@Models.Count)
+            </h6>
+            <div class="header-actions">
+                <button class="btn-header-action" @onclick="HandleLoadModel" title="Load new model">
+                    <i class="bi bi-folder-plus"></i>
+                </button>
+                @if (AllowClose)
+                {
+                    <button class="btn-close-panel" @onclick="ToggleMinimize" title="@(IsMinimized ? "Expand" : "Minimize")">
+                        <i class="bi bi-@(IsMinimized ? "arrows-angle-expand" : "dash")"></i>
+                    </button>
+                }
+            </div>
+        </div>
+        
+        @if (!IsMinimized)
+        {
+            <div class="model-manager-body">
+            @if (!Models.Any())
+            {
+                <div class="model-manager-empty">
+                    <i class="bi bi-inbox"></i>
+                    <p>No models loaded</p>
+                    <button class="btn-empty-action" @onclick="HandleLoadModel">
+                        <i class="bi bi-folder-plus"></i> Load Model
+                    </button>
+                </div>
+            }
+            else
+            {
+                <div class="model-list">
+                    @foreach (var model in Models.OrderByDescending(m => m.LoadedAt))
+                    {
+                        <div class="model-item @(model.IsStarted ? "" : "model-stopped")">
+                            <div class="model-info">
+                                <div class="model-name" title="@model.Name">
+                                    <i class="bi bi-file-earmark-binary"></i>
+                                    @model.Name
+                                </div>
+                                <div class="model-meta">
+                                    <span class="model-source-type">
+                                        @GetSourceTypeIcon(model.SourceType) @model.SourceType
+                                    </span>
+                                    @if (model.SizeBytes.HasValue)
+                                    {
+                                        <span class="model-size">@FormatFileSize(model.SizeBytes.Value)</span>
+                                    }
+                                    <span class="model-status @(model.IsStarted ? "status-started" : "status-stopped")">
+                                        @(model.IsStarted ? "Started" : "Stopped")
+                                    </span>
+                                </div>
+                            </div>
+                            
+                            <div class="model-actions">
+                                <button class="btn-model-action @(model.IsStarted ? "btn-stop" : "btn-start")" 
+                                        @onclick="() => OnToggleVisibility.InvokeAsync(model)"
+                                        title="@(model.IsStarted ? "Stop model" : "Start model")">
+                                    <i class="bi bi-@(model.IsStarted ? "pause-fill" : "play-fill")"></i>
+                                </button>
+                                <button class="btn-model-action btn-model-remove" 
+                                        @onclick="() => OnUnload.InvokeAsync(model)"
+                                        title="Unload model">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+        
+        @if (ShowActions && Models.Any())
+        {
+            <div class="model-manager-footer">
+                <button class="btn-panel-action btn-unload-all" @onclick="HandleUnloadAll">
+                    <i class="bi bi-trash3"></i> Unload All
+                </button>
+            </div>
+        }
+        }
+    </div>
+}
+
+@code {
+    private bool IsMinimized { get; set; } = false;
+    [Parameter]
+    public bool IsVisible { get; set; } = true;
+
+    [Parameter]
+    public List<LoadedModel> Models { get; set; } = new();
+
+    [Parameter]
+    public ModelManagerPosition Position { get; set; } = ModelManagerPosition.TopRight;
+
+    [Parameter]
+    public bool AllowClose { get; set; } = true;
+
+    [Parameter]
+    public bool ShowActions { get; set; } = true;
+
+    [Parameter]
+    public EventCallback OnClose { get; set; }
+
+    [Parameter]
+    public EventCallback OnLoadModel { get; set; }
+
+    [Parameter]
+    public EventCallback<LoadedModel> OnToggleVisibility { get; set; }
+
+    [Parameter]
+    public EventCallback<LoadedModel> OnUnload { get; set; }
+
+    [Parameter]
+    public EventCallback OnUnloadAll { get; set; }
+
+    private string PositionClass => Position switch
+    {
+        ModelManagerPosition.TopLeft => "position-top-left",
+        ModelManagerPosition.TopRight => "position-top-right",
+        ModelManagerPosition.BottomLeft => "position-bottom-left",
+        ModelManagerPosition.BottomRight => "position-bottom-right",
+        _ => "position-top-right"
+    };
+
+    private void ToggleMinimize()
+    {
+        IsMinimized = !IsMinimized;
+    }
+
+    private async Task HandleLoadModel()
+    {
+        await OnLoadModel.InvokeAsync();
+    }
+
+    private async Task HandleUnloadAll()
+    {
+        await OnUnloadAll.InvokeAsync();
+    }
+
+    private string GetSourceTypeIcon(ModelSourceType sourceType) => sourceType switch
+    {
+        ModelSourceType.LocalFile => "📁",
+        ModelSourceType.Url => "🌐",
+        ModelSourceType.Blob => "💾",
+        _ => "📄"
+    };
+
+    private string FormatFileSize(long bytes)
+    {
+        string[] sizes = { "B", "KB", "MB", "GB" };
+        double len = bytes;
+        int order = 0;
+        while (len >= 1024 && order < sizes.Length - 1)
+        {
+            order++;
+            len /= 1024;
+        }
+        return $"{len:0.##} {sizes[order]}";
+    }
+}
+

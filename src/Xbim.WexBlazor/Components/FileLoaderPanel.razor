@@ -1,0 +1,272 @@
+@using Microsoft.AspNetCore.Components.Forms
+@using Xbim.WexBlazor.Models
+@namespace Xbim.WexBlazor.Components
+
+<div class="file-loader-panel @CssClass @(IsVisible ? "visible" : "")">
+    <div class="file-loader-header">
+        <h5>
+            <i class="bi bi-folder2-open"></i>
+            Load Model
+        </h5>
+        @if (AllowClose)
+        {
+            <button type="button" class="btn-close" @onclick="Close" aria-label="Close"></button>
+        }
+    </div>
+
+    <div class="file-loader-body">
+        <ul class="nav nav-tabs mb-3" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link @(_activeTab == "local" ? "active" : "")" 
+                        @onclick='() => _activeTab = "local"' 
+                        type="button">
+                    <i class="bi bi-upload"></i> Local File
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link @(_activeTab == "url" ? "active" : "")" 
+                        @onclick='() => _activeTab = "url"' 
+                        type="button">
+                    <i class="bi bi-link-45deg"></i> From URL
+                </button>
+            </li>
+        </ul>
+
+        @if (_activeTab == "local")
+        {
+            <div class="file-loader-tab-content">
+                <div class="mb-3">
+                    <label class="form-label">Select wexBIM File</label>
+                    <InputFile class="form-control" 
+                              OnChange="HandleFileSelected" 
+                              accept=".wexbim"
+                              disabled="@IsLoading" />
+                </div>
+
+                @if (!string.IsNullOrEmpty(_selectedFileName))
+                {
+                    <div class="alert alert-info">
+                        <i class="bi bi-file-earmark-binary"></i>
+                        <strong>Selected:</strong> @_selectedFileName
+                        <span class="badge bg-primary ms-2">@_selectedFileSize</span>
+                    </div>
+                }
+            </div>
+        }
+        else if (_activeTab == "url")
+        {
+            <div class="file-loader-tab-content">
+                <div class="mb-3">
+                    <label class="form-label">Model URL</label>
+                    <input type="url" 
+                           class="form-control" 
+                           @bind="_modelUrl" 
+                           placeholder="https://example.com/model.wexbim"
+                           disabled="@IsLoading" />
+                    <div class="form-text">
+                        Enter the full URL to a wexBIM file
+                    </div>
+                </div>
+
+                @if (AllowCustomHeaders)
+                {
+                    <div class="mb-3">
+                        <label class="form-label">
+                            <i class="bi bi-shield-lock"></i> Custom Headers (Optional)
+                        </label>
+                        <textarea class="form-control" 
+                                 rows="3" 
+                                 @bind="_customHeaders"
+                                 placeholder='{ "Authorization": "Bearer token", "Custom-Header": "value" }'
+                                 disabled="@IsLoading"></textarea>
+                        <div class="form-text">
+                            JSON format for authenticated requests
+                        </div>
+                    </div>
+                }
+
+                <button type="button" 
+                        class="btn btn-primary w-100" 
+                        @onclick="HandleUrlLoad"
+                        disabled="@(IsLoading || string.IsNullOrWhiteSpace(_modelUrl))">
+                    <i class="bi bi-download"></i> Load from URL
+                </button>
+            </div>
+        }
+
+        @if (IsLoading)
+        {
+            <div class="file-loader-progress">
+                <div class="d-flex align-items-center">
+                    <div class="spinner-border spinner-border-sm me-2" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <span>Loading model...</span>
+                </div>
+                @if (_loadingProgress > 0)
+                {
+                    <div class="progress mt-2">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                             role="progressbar" 
+                             style="width: @(_loadingProgress)%" 
+                             aria-valuenow="@_loadingProgress" 
+                             aria-valuemin="0" 
+                             aria-valuemax="100">
+                            @(_loadingProgress)%
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+
+        @if (!string.IsNullOrEmpty(_errorMessage))
+        {
+            <div class="alert alert-danger mt-3">
+                <i class="bi bi-exclamation-triangle"></i>
+                @_errorMessage
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public bool IsVisible { get; set; } = true;
+
+    [Parameter]
+    public bool AllowClose { get; set; } = true;
+
+    [Parameter]
+    public bool AllowCustomHeaders { get; set; } = true;
+
+    [Parameter]
+    public string? CssClass { get; set; }
+
+    [Parameter]
+    public EventCallback<FileLoadedEventArgs> OnFileLoaded { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnUrlLoaded { get; set; }
+
+    [Parameter]
+    public EventCallback OnClose { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnError { get; set; }
+
+    private string _activeTab = "local";
+    private string? _selectedFileName;
+    private string? _selectedFileSize;
+    private string? _modelUrl;
+    private string? _customHeaders;
+    private string? _errorMessage;
+    private int _loadingProgress;
+    private bool IsLoading;
+
+    private async Task HandleFileSelected(InputFileChangeEventArgs e)
+    {
+        var file = e.File;
+        if (file == null) return;
+
+        _selectedFileName = file.Name;
+        _selectedFileSize = FormatFileSize(file.Size);
+        _errorMessage = null;
+
+        try
+        {
+            IsLoading = true;
+            _loadingProgress = 0;
+            StateHasChanged();
+
+            // Read file into byte array
+            await using var stream = file.OpenReadStream(file.Size);
+            using var memoryStream = new MemoryStream();
+            
+            var buffer = new byte[81920];
+            int bytesRead;
+            long totalRead = 0;
+            
+            while ((bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length)) > 0)
+            {
+                await memoryStream.WriteAsync(buffer, 0, bytesRead);
+                totalRead += bytesRead;
+                _loadingProgress = (int)((totalRead * 100) / file.Size);
+                StateHasChanged();
+            }
+
+            // Pass file data and metadata to parent component
+            await OnFileLoaded.InvokeAsync(new FileLoadedEventArgs
+            {
+                FileData = memoryStream.ToArray(),
+                FileName = file.Name,
+                FileSize = file.Size
+            });
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = $"Error loading file: {ex.Message}";
+            await OnError.InvokeAsync(_errorMessage);
+        }
+        finally
+        {
+            IsLoading = false;
+            _loadingProgress = 0;
+            StateHasChanged();
+        }
+    }
+
+    private async Task HandleUrlLoad()
+    {
+        if (string.IsNullOrWhiteSpace(_modelUrl)) return;
+
+        _errorMessage = null;
+
+        try
+        {
+            IsLoading = true;
+            StateHasChanged();
+
+            // Validate URL
+            if (!Uri.TryCreate(_modelUrl, UriKind.Absolute, out var uri))
+            {
+                throw new Exception("Invalid URL format");
+            }
+
+            // Pass URL directly to the viewer
+            await OnUrlLoaded.InvokeAsync(_modelUrl);
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = $"Error loading from URL: {ex.Message}";
+            await OnError.InvokeAsync(_errorMessage);
+        }
+        finally
+        {
+            IsLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task Close()
+    {
+        IsVisible = false;
+        await OnClose.InvokeAsync();
+    }
+
+    private string FormatFileSize(long bytes)
+    {
+        string[] sizes = { "B", "KB", "MB", "GB" };
+        double len = bytes;
+        int order = 0;
+        while (len >= 1024 && order < sizes.Length - 1)
+        {
+            order++;
+            len = len / 1024;
+        }
+        return $"{len:0.##} {sizes[order]}";
+    }
+
+    public void Show() => IsVisible = true;
+    public void Hide() => IsVisible = false;
+}
+

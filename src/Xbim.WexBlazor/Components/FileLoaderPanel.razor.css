@@ -1,0 +1,223 @@
+.file-loader-panel {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.9);
+    width: 90%;
+    max-width: 500px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    z-index: 2000;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+}
+
+.file-loader-panel.visible {
+    opacity: 1;
+    visibility: visible;
+    transform: translate(-50%, -50%) scale(1);
+}
+
+.file-loader-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 24px;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.file-loader-header h5 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #333;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.file-loader-header .btn-close {
+    padding: 8px;
+}
+
+.file-loader-body {
+    padding: 24px;
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+.file-loader-tab-content {
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.file-loader-progress {
+    margin-top: 16px;
+    padding: 8px;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+
+.file-loader-panel .nav-tabs {
+    border-bottom: 2px solid #e0e0e0;
+}
+
+.file-loader-panel .nav-link {
+    border: none;
+    color: #666;
+    padding: 12px 20px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    border-radius: 0;
+    border-bottom: 3px solid transparent;
+    margin-bottom: -2px;
+}
+
+.file-loader-panel .nav-link:hover {
+    color: #0066cc;
+    background: transparent;
+    border-bottom-color: #0066cc33;
+}
+
+.file-loader-panel .nav-link.active {
+    color: #0066cc;
+    background: transparent;
+    border-bottom-color: #0066cc;
+}
+
+.file-loader-panel .form-label {
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 8px;
+    font-size: 0.9rem;
+}
+
+.file-loader-panel .form-control {
+    border-radius: 8px;
+    border: 2px solid #e0e0e0;
+    padding: 10px 14px;
+    transition: border-color 0.2s ease;
+}
+
+.file-loader-panel .form-control:focus {
+    border-color: #0066cc;
+    box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
+}
+
+.file-loader-panel .form-text {
+    font-size: 0.85rem;
+    color: #666;
+    margin-top: 6px;
+}
+
+.file-loader-panel .alert {
+    border-radius: 8px;
+    border: none;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.file-loader-panel .alert-info {
+    background: #e3f2fd;
+    color: #0d47a1;
+}
+
+.file-loader-panel .alert-danger {
+    background: #ffebee;
+    color: #c62828;
+}
+
+.file-loader-panel .btn {
+    border-radius: 8px;
+    padding: 10px 20px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.file-loader-panel .btn-primary {
+    background: #0066cc;
+    border: none;
+}
+
+.file-loader-panel .btn-primary:hover:not(:disabled) {
+    background: #0052a3;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 102, 204, 0.3);
+}
+
+.file-loader-panel .btn-primary:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.file-loader-panel .progress {
+    height: 8px;
+    border-radius: 4px;
+    background: #e0e0e0;
+}
+
+.file-loader-panel .progress-bar {
+    border-radius: 4px;
+    background: linear-gradient(90deg, #0066cc 0%, #0099ff 100%);
+}
+
+.file-loader-panel .spinner-border-sm {
+    width: 1rem;
+    height: 1rem;
+    border-width: 0.15em;
+}
+
+.file-loader-panel .badge {
+    font-weight: 500;
+    padding: 4px 8px;
+}
+
+/* Scrollbar styling */
+.file-loader-body::-webkit-scrollbar {
+    width: 8px;
+}
+
+.file-loader-body::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+
+.file-loader-body::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 10px;
+}
+
+.file-loader-body::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+    .file-loader-panel {
+        width: 95%;
+        max-width: none;
+    }
+
+    .file-loader-header {
+        padding: 16px 20px;
+    }
+
+    .file-loader-body {
+        padding: 20px;
+    }
+}
+
