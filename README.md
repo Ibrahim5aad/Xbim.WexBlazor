@@ -1,7 +1,7 @@
 # Xbim.WexBlazor
 
-[![NuGet](https://img.shields.io/nuget/v/Xbim.WexBlazor.svg)](https://www.nuget.org/packages/Xbim.WexBlazor/)
-[![NuGet Downloads](https://img.shields.io/nuget/dt/Xbim.WexBlazor.svg)](https://www.nuget.org/packages/Xbim.WexBlazor/)
+[![NuGet](https://img.shields.io/nuget/v/Xbim.WexBlazor.svg?style=flat-square)](https://www.nuget.org/packages/Xbim.WexBlazor/)
+[![NuGet Downloads](https://img.shields.io/nuget/dt/Xbim.WexBlazor.svg?style=flat-square)](https://www.nuget.org/packages/Xbim.WexBlazor/)
 [![Build Status](https://github.com/Ibrahim5aad/Xbim.WexBlazor/actions/workflows/publish-nuget.yml/badge.svg)](https://github.com/Ibrahim5aad/Xbim.WexBlazor/actions/workflows/publish-nuget.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
