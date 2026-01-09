@@ -26,9 +26,15 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: '20'
+    
+    - name: Install TypeScript
+      run: npm install -g typescript
         
     - name: Restore dependencies
       run: dotnet restore
+    
+    - name: Compile TypeScript
+      run: npx tsc --project src/Xbim.WexBlazor/tsconfig.json
       
     - name: Build
       run: dotnet build --configuration Release --no-restore

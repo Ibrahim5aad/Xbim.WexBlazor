@@ -7,7 +7,7 @@
     <TypeScriptCompileBlocked>false</TypeScriptCompileBlocked>
     <TypeScriptToolsVersion>Latest</TypeScriptToolsVersion>
     <PackageId>Xbim.WexBlazor</PackageId>
-    <Version>1.0.4</Version>
+    <Version>1.0.5</Version>
     <Authors>Ibrahim Saad</Authors>
     <Company>Ibrahim Saad</Company>
     <Description>A Blazor wrapper for the xBIM Viewer, providing seamless integration of 3D BIM model visualization in Blazor WebAssembly applications. Includes model management, toolbar system, and plugin support.</Description>
