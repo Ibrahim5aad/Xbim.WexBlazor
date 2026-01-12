@@ -4,7 +4,7 @@ namespace Xbim.WexBlazor.Services;
 
 public class ThemeService
 {
-    private ViewerTheme _currentTheme = ViewerTheme.Light;
+    private ViewerTheme _currentTheme = ViewerTheme.Dark;
     
     public event Action? OnThemeChanged;
     

@@ -26,7 +26,7 @@
                          OnHoverPick="HandleHoverPick"
                          OnClick="HandleClick">
 
-        <FileLoaderPanel @ref="_fileLoader"
+        <FileLoaderPanel 
                          IsVisible="@_showFileLoader"
                          AllowClose="true"
                          OnFileLoaded="HandleFileDataLoaded"
@@ -57,17 +57,12 @@
 
 @code {
     private XbimViewerComponent? _xbimViewer;
-    private FileLoaderPanel? _fileLoader;
-    private bool _viewerInitialized = false;
-    private bool _modelLoaded = false;
     private bool _showFileLoader = true;
     private bool _showModelManager = true;
     private List<SelectedElement> _selectedElements = new();
     
     // Plugin tracking
-    private bool _sectionBoxActive = false;
     private bool _gridActive = false;
-    private bool _clippingPlaneActive = false;
     private SectionBoxPlugin? _sectionBoxPlugin;
     private GridPlugin? _gridPlugin;
     private ClippingPlanePlugin? _clippingPlanePlugin;
@@ -106,7 +101,7 @@
         var themeClass = ThemeService.GetThemeClass();
         await JSRuntime.InvokeVoidAsync("eval", $"document.body.className = '{themeClass}';");
         
-        if (_xbimViewer != null && _viewerInitialized)
+        if (_xbimViewer != null)
         {
             await _xbimViewer.SetBackgroundColorAsync(GetViewerBackgroundColor());
             
@@ -135,8 +130,6 @@
     
     private async Task HandleViewerInitialized(string viewerId)
     {
-        _viewerInitialized = true;
-        
         InitializeToolbar();
         
         var navigationCubePlugin = new NavigationCubePlugin()
@@ -162,15 +155,12 @@
             IsStopped = true
         };
         await _xbimViewer!.AddPluginAsync(_sectionBoxPlugin);
-        _sectionBoxActive = true;
         
         _clippingPlanePlugin = new ClippingPlanePlugin
         {
             IsStopped = true
         };
         await _xbimViewer!.AddPluginAsync(_clippingPlanePlugin);
-        _clippingPlaneActive = true;
-        
         await InvokeAsync(StateHasChanged);
     }
     
@@ -205,7 +195,6 @@
     
     private async Task HandleModelLoaded(bool success)
     {
-        _modelLoaded = success;
         if (success)
         {
             await ZoomFit();
@@ -296,7 +285,7 @@
     
     private async Task ZoomFit()
     {
-        if (_xbimViewer != null && _modelLoaded)
+        if (_xbimViewer != null)
         {
             await _xbimViewer.ZoomFitAsync();
         }
@@ -304,7 +293,7 @@
     
     private async Task Reset()
     {
-        if (_xbimViewer != null && _modelLoaded)
+        if (_xbimViewer != null)
         {
             await _xbimViewer.ResetAsync();
         }
