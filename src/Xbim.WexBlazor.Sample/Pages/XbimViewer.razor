@@ -35,15 +35,16 @@
         @if (_xbimViewer != null)
         {
             <ModelManagerPanel IsVisible="@_showModelManager"
+                               Viewer="@_xbimViewer"
                                Models="@GetLoadedModelsList()"
                                Position="ModelManagerPosition.TopRight"
                                AllowClose="true"
                                ShowActions="true"
                                OnClose="HandleModelManagerClose"
                                OnLoadModel="ShowFileLoader"
-                               OnToggleVisibility="HandleToggleModel"
-                               OnUnload="HandleUnloadModel"
-                               OnUnloadAll="HandleUnloadAllModels" />
+                               OnAfterToggleVisibility="HandleAfterToggleModel"
+                               OnAfterUnload="HandleAfterUnloadModel"
+                               OnAfterUnloadAll="HandleAfterUnloadAllModels" />
 
             <ViewerToolbar Items="@_toolbarItems"
                            Position="@_toolbarPosition"
@@ -210,29 +211,20 @@
         StateHasChanged();
     }
 
-    private async Task HandleToggleModel(LoadedModel model)
+    private async Task HandleAfterToggleModel(LoadedModel model)
     {
-        if (_xbimViewer == null) return;
-
-        await _xbimViewer.ToggleModelAsync(model.Id);
         await ZoomFit();
         StateHasChanged();
     }
 
-    private async Task HandleUnloadModel(LoadedModel model)
+    private async Task HandleAfterUnloadModel(LoadedModel model)
     {
-        if (_xbimViewer == null) return;
-
-        await _xbimViewer.UnloadModelAsync(model.Id);
         await ZoomFit();
         StateHasChanged();
     }
 
-    private async Task HandleUnloadAllModels()
+    private async Task HandleAfterUnloadAllModels()
     {
-        if (_xbimViewer == null) return;
-
-        await _xbimViewer.UnloadAllModelsAsync();
         await ZoomFit();
         StateHasChanged();
     }

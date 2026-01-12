@@ -60,12 +60,12 @@
                             
                             <div class="model-actions">
                                 <button class="btn-model-action @(model.IsStarted ? "btn-stop" : "btn-start")" 
-                                        @onclick="() => OnToggleVisibility.InvokeAsync(model)"
+                                        @onclick="() => HandleToggleVisibility(model)"
                                         title="@(model.IsStarted ? "Stop model" : "Start model")">
                                     <i class="bi bi-@(model.IsStarted ? "pause-fill" : "play-fill")"></i>
                                 </button>
                                 <button class="btn-model-action btn-model-remove" 
-                                        @onclick="() => OnUnload.InvokeAsync(model)"
+                                        @onclick="() => HandleUnload(model)"
                                         title="Unload model">
                                     <i class="bi bi-trash"></i>
                                 </button>
@@ -90,6 +90,7 @@
 
 @code {
     private bool IsMinimized { get; set; } = false;
+    
     [Parameter]
     public bool IsVisible { get; set; } = true;
 
@@ -106,19 +107,22 @@
     public bool ShowActions { get; set; } = true;
 
     [Parameter]
+    public XbimViewerComponent? Viewer { get; set; }
+
+    [Parameter]
     public EventCallback OnClose { get; set; }
 
     [Parameter]
     public EventCallback OnLoadModel { get; set; }
 
     [Parameter]
-    public EventCallback<LoadedModel> OnToggleVisibility { get; set; }
+    public EventCallback<LoadedModel> OnAfterToggleVisibility { get; set; }
 
     [Parameter]
-    public EventCallback<LoadedModel> OnUnload { get; set; }
+    public EventCallback<LoadedModel> OnAfterUnload { get; set; }
 
     [Parameter]
-    public EventCallback OnUnloadAll { get; set; }
+    public EventCallback OnAfterUnloadAll { get; set; }
 
     private string PositionClass => Position switch
     {
@@ -139,9 +143,43 @@
         await OnLoadModel.InvokeAsync();
     }
 
+    private async Task HandleToggleVisibility(LoadedModel model)
+    {
+        if (Viewer != null)
+        {
+            await Viewer.ToggleModelAsync(model.Id);
+        }
+        
+        if (OnAfterToggleVisibility.HasDelegate)
+        {
+            await OnAfterToggleVisibility.InvokeAsync(model);
+        }
+    }
+
+    private async Task HandleUnload(LoadedModel model)
+    {
+        if (Viewer != null)
+        {
+            await Viewer.UnloadModelAsync(model.Id);
+        }
+        
+        if (OnAfterUnload.HasDelegate)
+        {
+            await OnAfterUnload.InvokeAsync(model);
+        }
+    }
+
     private async Task HandleUnloadAll()
     {
-        await OnUnloadAll.InvokeAsync();
+        if (Viewer != null)
+        {
+            await Viewer.UnloadAllModelsAsync();
+        }
+        
+        if (OnAfterUnloadAll.HasDelegate)
+        {
+            await OnAfterUnloadAll.InvokeAsync();
+        }
     }
 
     private string GetSourceTypeIcon(ModelSourceType sourceType) => sourceType switch
