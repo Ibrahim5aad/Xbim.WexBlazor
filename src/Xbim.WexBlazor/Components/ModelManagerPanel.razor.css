@@ -1,9 +1,10 @@
 .model-manager-panel {
     position: absolute;
-    background: rgba(255, 255, 255, 0.95);
+    background: var(--xbim-bg-panel);
     backdrop-filter: blur(10px);
     border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    box-shadow: var(--xbim-shadow-lg);
+    border: 1px solid var(--xbim-border-secondary);
     z-index: 1000;
     min-width: 300px;
     max-width: 400px;
@@ -44,8 +45,8 @@
     align-items: center;
     justify-content: space-between;
     padding: 12px 16px;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-    background: rgba(255, 255, 255, 0.8);
+    border-bottom: 1px solid var(--xbim-border-secondary);
+    background: var(--xbim-bg-tertiary);
 }
 
 .model-manager-panel.minimized .model-manager-header {
@@ -57,7 +58,7 @@
     margin: 0;
     font-size: 14px;
     font-weight: 600;
-    color: #333;
+    color: var(--xbim-text-primary);
     display: flex;
     align-items: center;
     gap: 8px;
@@ -74,7 +75,7 @@
     border: none;
     cursor: pointer;
     padding: 6px 8px;
-    color: #666;
+    color: var(--xbim-text-secondary);
     font-size: 16px;
     line-height: 1;
     transition: all 0.2s;
@@ -85,8 +86,8 @@
 }
 
 .btn-header-action:hover {
-    background: rgba(0, 123, 255, 0.1);
-    color: #007bff;
+    background: var(--xbim-accent-primary-bg);
+    color: var(--xbim-accent-primary);
 }
 
 .btn-close-panel {
@@ -94,7 +95,7 @@
     border: none;
     cursor: pointer;
     padding: 4px;
-    color: #666;
+    color: var(--xbim-text-secondary);
     font-size: 20px;
     line-height: 1;
     transition: color 0.2s;
@@ -110,7 +111,7 @@
 }
 
 .btn-close-panel:hover {
-    color: #333;
+    color: var(--xbim-text-primary);
 }
 
 .model-manager-body {
@@ -125,7 +126,7 @@
     align-items: center;
     justify-content: center;
     padding: 40px 20px;
-    color: #999;
+    color: var(--xbim-text-muted);
     text-align: center;
 }
 
@@ -139,7 +140,7 @@
 }
 
 .btn-empty-action {
-    background: #007bff;
+    background: var(--xbim-accent-primary);
     color: white;
     border: none;
     padding: 8px 16px;
@@ -154,9 +155,9 @@
 }
 
 .btn-empty-action:hover {
-    background: #0056b3;
+    background: var(--xbim-accent-primary-hover);
     transform: translateY(-1px);
-    box-shadow: 0 2px 6px rgba(0, 123, 255, 0.3);
+    box-shadow: var(--xbim-shadow-md);
 }
 
 .model-list {
@@ -170,14 +171,14 @@
     align-items: center;
     justify-content: space-between;
     padding: 12px;
-    background: white;
-    border: 1px solid rgba(0, 0, 0, 0.1);
+    background: var(--xbim-bg-primary);
+    border: 1px solid var(--xbim-border-primary);
     border-radius: 6px;
     transition: all 0.2s;
 }
 
 .model-item:hover {
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--xbim-shadow-md);
 }
 
 .model-item.model-stopped {
@@ -196,7 +197,7 @@
 .model-name {
     font-weight: 500;
     font-size: 13px;
-    color: #333;
+    color: var(--xbim-text-primary);
     margin-bottom: 4px;
     white-space: nowrap;
     overflow: hidden;
@@ -215,7 +216,7 @@
     align-items: center;
     gap: 12px;
     font-size: 11px;
-    color: #666;
+    color: var(--xbim-text-secondary);
 }
 
 .model-source-type {
@@ -225,7 +226,7 @@
 }
 
 .model-size {
-    color: #999;
+    color: var(--xbim-text-tertiary);
 }
 
 .model-status {
@@ -237,13 +238,13 @@
 }
 
 .model-status.status-started {
-    background: rgba(40, 167, 69, 0.1);
-    color: #28a745;
+    background: var(--xbim-success-bg);
+    color: var(--xbim-success);
 }
 
 .model-status.status-stopped {
-    background: rgba(255, 193, 7, 0.1);
-    color: #ffc107;
+    background: var(--xbim-warning-bg);
+    color: var(--xbim-warning);
 }
 
 .model-actions {
@@ -252,12 +253,12 @@
 }
 
 .btn-model-action {
-    background: rgba(0, 0, 0, 0.05);
+    background: var(--xbim-bg-hover);
     border: none;
     border-radius: 4px;
     padding: 6px 8px;
     cursor: pointer;
-    color: #666;
+    color: var(--xbim-text-secondary);
     font-size: 14px;
     transition: all 0.2s;
     display: flex;
@@ -266,29 +267,29 @@
 }
 
 .btn-model-action:hover {
-    background: rgba(0, 0, 0, 0.1);
-    color: #333;
+    background: var(--xbim-bg-active);
+    color: var(--xbim-text-primary);
 }
 
 .btn-model-remove:hover {
-    background: rgba(220, 53, 69, 0.1);
-    color: #dc3545;
+    background: var(--xbim-danger-bg);
+    color: var(--xbim-danger);
 }
 
 .btn-model-action.btn-stop:hover {
-    background: rgba(255, 193, 7, 0.1);
-    color: #ffc107;
+    background: var(--xbim-warning-bg);
+    color: var(--xbim-warning);
 }
 
 .btn-model-action.btn-start:hover {
-    background: rgba(40, 167, 69, 0.1);
-    color: #28a745;
+    background: var(--xbim-success-bg);
+    color: var(--xbim-success);
 }
 
 .model-manager-footer {
     padding: 8px;
-    border-top: 1px solid rgba(0, 0, 0, 0.1);
-    background: rgba(255, 255, 255, 0.8);
+    border-top: 1px solid var(--xbim-border-secondary);
+    background: var(--xbim-bg-tertiary);
 }
 
 .btn-panel-action {
@@ -307,12 +308,12 @@
 }
 
 .btn-unload-all {
-    background: rgba(220, 53, 69, 0.1);
-    color: #dc3545;
+    background: var(--xbim-danger-bg);
+    color: var(--xbim-danger);
 }
 
 .btn-unload-all:hover {
-    background: #dc3545;
+    background: var(--xbim-danger);
     color: white;
 }
 
@@ -321,16 +322,15 @@
 }
 
 .model-manager-body::-webkit-scrollbar-track {
-    background: rgba(0, 0, 0, 0.05);
+    background: var(--xbim-scrollbar-track);
     border-radius: 3px;
 }
 
 .model-manager-body::-webkit-scrollbar-thumb {
-    background: rgba(0, 0, 0, 0.2);
+    background: var(--xbim-scrollbar-thumb);
     border-radius: 3px;
 }
 
 .model-manager-body::-webkit-scrollbar-thumb:hover {
-    background: rgba(0, 0, 0, 0.3);
+    background: var(--xbim-scrollbar-thumb-hover);
 }
-

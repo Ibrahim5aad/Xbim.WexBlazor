@@ -1,6 +1,14 @@
+@import url('../_content/Xbim.WexBlazor/css/themes.css');
+
 html, body {
     font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
     height: 100%;
+}
+
+body {
+    background-color: var(--xbim-bg-primary);
+    color: var(--xbim-text-primary);
+    transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 #app {
@@ -12,13 +20,13 @@ h1:focus {
 }
 
 a, .btn-link {
-    color: #0071c1;
+    color: var(--xbim-accent-primary);
 }
 
 .btn-primary {
     color: #fff;
-    background-color: #1b6ec2;
-    border-color: #1861ac;
+    background-color: var(--xbim-accent-primary);
+    border-color: var(--xbim-accent-primary);
 }
 
 .btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {

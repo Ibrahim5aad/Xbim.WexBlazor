@@ -4,9 +4,11 @@
 @using Xbim.WexBlazor.Components.BuiltInButtons
 @using Xbim.WexBlazor.Interop
 @using Xbim.WexBlazor.Models
+@using Xbim.WexBlazor.Services
 @using Microsoft.AspNetCore.Components.Forms
 @implements IDisposable
 @inject IJSRuntime JSRuntime
+@inject ThemeService ThemeService
 
 <PageTitle>Xbim Viewer</PageTitle>
 
@@ -81,6 +83,32 @@
     private ToolbarPosition _toolbarPosition = ToolbarPosition.Bottom;
     private ToolbarAlignment _toolbarAlignment = ToolbarAlignment.Center;
     
+    protected override void OnInitialized()
+    {
+        ThemeService.OnThemeChanged += ApplyTheme;
+        base.OnInitialized();
+    }
+    
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await ApplyThemeAsync();
+        }
+        await base.OnAfterRenderAsync(firstRender);
+    }
+    
+    private void ApplyTheme()
+    {
+        InvokeAsync(ApplyThemeAsync);
+    }
+    
+    private async Task ApplyThemeAsync()
+    {
+        var themeClass = ThemeService.GetThemeClass();
+        await JSRuntime.InvokeVoidAsync("eval", $"document.body.className = '{themeClass}';");
+    }
+    
     private async Task HandleViewerInitialized(string viewerId)
     {
         _viewerInitialized = true;
@@ -134,8 +162,20 @@
             ViewerBuiltInButtons.CreateXRayToggle(_xbimViewer),
             ViewerBuiltInButtons.CreateClearSelectionButton(_xbimViewer),
             ViewerBuiltInButtons.CreateSectionBoxButtons(_xbimViewer, () => _sectionBoxPlugin, "Box", StateHasChanged),
-            ViewerBuiltInButtons.CreateClippingPlaneButtons(_xbimViewer, () => _clippingPlanePlugin, "Plane", StateHasChanged)
+            ViewerBuiltInButtons.CreateClippingPlaneButtons(_xbimViewer, () => _clippingPlanePlugin, "Plane", StateHasChanged),
+            new ToolbarButton
+            {
+                Icon = "bi-moon-stars",
+                Tooltip = "Toggle Theme",
+                OnClick = EventCallback.Factory.Create(this, ToggleTheme)
+            }
         };
+    }
+    
+    private async Task ToggleTheme()
+    {
+        ThemeService.ToggleTheme();
+        await Task.CompletedTask;
     }
     
     private async Task HandleModelLoaded(bool success)
@@ -307,5 +347,6 @@
 
     public void Dispose()
     {
+        ThemeService.OnThemeChanged -= ApplyTheme;
     }
 } 

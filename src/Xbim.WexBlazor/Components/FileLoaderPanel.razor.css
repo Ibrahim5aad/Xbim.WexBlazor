@@ -5,9 +5,10 @@
     transform: translate(-50%, -50%) scale(0.9);
     width: 90%;
     max-width: 500px;
-    background: white;
+    background: var(--xbim-bg-primary);
     border-radius: 12px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    box-shadow: var(--xbim-shadow-xl);
+    border: 1px solid var(--xbim-border-secondary);
     z-index: 2000;
     opacity: 0;
     visibility: hidden;
@@ -25,14 +26,14 @@
     justify-content: space-between;
     align-items: center;
     padding: 20px 24px;
-    border-bottom: 1px solid #e0e0e0;
+    border-bottom: 1px solid var(--xbim-border-primary);
 }
 
 .file-loader-header h5 {
     margin: 0;
     font-size: 1.25rem;
     font-weight: 600;
-    color: #333;
+    color: var(--xbim-text-primary);
     display: flex;
     align-items: center;
     gap: 8px;
@@ -66,17 +67,17 @@
 .file-loader-progress {
     margin-top: 16px;
     padding: 8px;
-    background: #f8f9fa;
+    background: var(--xbim-bg-hover);
     border-radius: 8px;
 }
 
 .file-loader-panel .nav-tabs {
-    border-bottom: 2px solid #e0e0e0;
+    border-bottom: 2px solid var(--xbim-border-primary);
 }
 
 .file-loader-panel .nav-link {
     border: none;
-    color: #666;
+    color: var(--xbim-text-secondary);
     padding: 12px 20px;
     font-weight: 500;
     transition: all 0.2s ease;
@@ -86,39 +87,41 @@
 }
 
 .file-loader-panel .nav-link:hover {
-    color: #0066cc;
+    color: var(--xbim-accent-primary);
     background: transparent;
-    border-bottom-color: #0066cc33;
+    border-bottom-color: var(--xbim-accent-primary-bg);
 }
 
 .file-loader-panel .nav-link.active {
-    color: #0066cc;
+    color: var(--xbim-accent-primary);
     background: transparent;
-    border-bottom-color: #0066cc;
+    border-bottom-color: var(--xbim-accent-primary);
 }
 
 .file-loader-panel .form-label {
     font-weight: 600;
-    color: #333;
+    color: var(--xbim-text-primary);
     margin-bottom: 8px;
     font-size: 0.9rem;
 }
 
 .file-loader-panel .form-control {
     border-radius: 8px;
-    border: 2px solid #e0e0e0;
+    border: 2px solid var(--xbim-border-primary);
     padding: 10px 14px;
     transition: border-color 0.2s ease;
+    background: var(--xbim-bg-primary);
+    color: var(--xbim-text-primary);
 }
 
 .file-loader-panel .form-control:focus {
-    border-color: #0066cc;
-    box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
+    border-color: var(--xbim-accent-primary);
+    box-shadow: 0 0 0 3px var(--xbim-accent-primary-bg);
 }
 
 .file-loader-panel .form-text {
     font-size: 0.85rem;
-    color: #666;
+    color: var(--xbim-text-secondary);
     margin-top: 6px;
 }
 
@@ -132,13 +135,13 @@
 }
 
 .file-loader-panel .alert-info {
-    background: #e3f2fd;
-    color: #0d47a1;
+    background: var(--xbim-info-bg);
+    color: var(--xbim-info);
 }
 
 .file-loader-panel .alert-danger {
-    background: #ffebee;
-    color: #c62828;
+    background: var(--xbim-danger-bg);
+    color: var(--xbim-danger);
 }
 
 .file-loader-panel .btn {
@@ -149,14 +152,15 @@
 }
 
 .file-loader-panel .btn-primary {
-    background: #0066cc;
+    background: var(--xbim-accent-primary);
     border: none;
+    color: white;
 }
 
 .file-loader-panel .btn-primary:hover:not(:disabled) {
-    background: #0052a3;
+    background: var(--xbim-accent-primary-hover);
     transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(0, 102, 204, 0.3);
+    box-shadow: var(--xbim-shadow-md);
 }
 
 .file-loader-panel .btn-primary:disabled {
@@ -167,12 +171,12 @@
 .file-loader-panel .progress {
     height: 8px;
     border-radius: 4px;
-    background: #e0e0e0;
+    background: var(--xbim-border-primary);
 }
 
 .file-loader-panel .progress-bar {
     border-radius: 4px;
-    background: linear-gradient(90deg, #0066cc 0%, #0099ff 100%);
+    background: linear-gradient(90deg, var(--xbim-accent-primary) 0%, var(--xbim-accent-primary-hover) 100%);
 }
 
 .file-loader-panel .spinner-border-sm {
@@ -192,17 +196,17 @@
 }
 
 .file-loader-body::-webkit-scrollbar-track {
-    background: #f1f1f1;
+    background: var(--xbim-scrollbar-track);
     border-radius: 10px;
 }
 
 .file-loader-body::-webkit-scrollbar-thumb {
-    background: #888;
+    background: var(--xbim-scrollbar-thumb);
     border-radius: 10px;
 }
 
 .file-loader-body::-webkit-scrollbar-thumb:hover {
-    background: #555;
+    background: var(--xbim-scrollbar-thumb-hover);
 }
 
 /* Mobile responsive */
@@ -220,4 +224,3 @@
         padding: 20px;
     }
 }
-
