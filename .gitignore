@@ -2,6 +2,9 @@
 **/wwwroot/js/*.js
 **/wwwroot/js/*.js.map
 
+## Documentation (keep local only)
+docs/
+
 ## Node.js
 node_modules/
 package-lock.json

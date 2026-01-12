@@ -77,7 +77,7 @@
     }
     
     private List<ToolbarItemBase> _toolbarItems = new();
-    private ToolbarPosition _toolbarPosition = ToolbarPosition.Left;
+    private ToolbarPosition _toolbarPosition = ToolbarPosition.Bottom;
     private ToolbarAlignment _toolbarAlignment = ToolbarAlignment.Center;
     
     private async Task HandleViewerInitialized(string viewerId)
@@ -121,7 +121,7 @@
                 Factor = 1.5,
                 ZFactor = 20,
                 NumberOfLines = 20,
-                Color = new[] { 1, 0, 0, 1.0 }  // Dark gray with full opacity
+                Color = new[] { 1, 1, 1, 1.0 } 
             };
             await _xbimViewer!.AddPluginAsync(grid);
             
