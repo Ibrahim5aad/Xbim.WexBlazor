@@ -83,6 +83,40 @@
     private async Task HandleViewerInitialized(string viewerId)
     {
         _viewerInitialized = true;
+        
+        InitializeToolbar();
+        
+        var navigationCubePlugin = new NavigationCubePlugin()
+        {
+            Ratio = 0.02,
+            PassiveAlpha = 1,
+            ActiveAlpha = 1
+        };
+        await _xbimViewer!.AddPluginAsync(navigationCubePlugin);
+        
+        var grid = new GridPlugin
+        {
+            Factor = 1.5,
+            ZFactor = 20,
+            NumberOfLines = 20,
+            Color = new[] { 1, 1, 1, 1.0 } 
+        };
+        await _xbimViewer!.AddPluginAsync(grid);
+        
+        _sectionBoxPlugin = new SectionBoxPlugin
+        {
+            IsStopped = true
+        };
+        await _xbimViewer!.AddPluginAsync(_sectionBoxPlugin);
+        _sectionBoxActive = true;
+        
+        _clippingPlanePlugin = new ClippingPlanePlugin
+        {
+            IsStopped = true
+        };
+        await _xbimViewer!.AddPluginAsync(_clippingPlanePlugin);
+        _clippingPlaneActive = true;
+        
         await InvokeAsync(StateHasChanged);
     }
     
@@ -108,37 +142,6 @@
         _modelLoaded = success;
         if (success)
         {
-            InitializeToolbar();
-            var navigationCubePlugin = new NavigationCubePlugin()
-            {
-                Ratio = 0.02,
-                PassiveAlpha = 1,
-                ActiveAlpha = 1
-            };
-            await _xbimViewer!.AddPluginAsync(navigationCubePlugin);
-            var grid = new GridPlugin
-            {
-                Factor = 1.5,
-                ZFactor = 20,
-                NumberOfLines = 20,
-                Color = new[] { 1, 1, 1, 1.0 } 
-            };
-            await _xbimViewer!.AddPluginAsync(grid);
-            
-            _sectionBoxPlugin = new SectionBoxPlugin
-            {
-                IsStopped = true
-            };
-            await _xbimViewer!.AddPluginAsync(_sectionBoxPlugin);
-            _sectionBoxActive = true;
-            
-            _clippingPlanePlugin = new ClippingPlanePlugin
-            {
-                IsStopped = true
-            };
-            await _xbimViewer!.AddPluginAsync(_clippingPlanePlugin);
-            _clippingPlaneActive = true;
-            
             await ZoomFit();
         }
         await InvokeAsync(StateHasChanged);
