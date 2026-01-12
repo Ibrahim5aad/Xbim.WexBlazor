@@ -73,10 +73,27 @@ jobs:
         name: nuget-package
         path: ./artifacts/*.nupkg
     
+    - name: Create GitHub Release
+      if: startsWith(github.ref, 'refs/tags/')
+      uses: softprops/action-gh-release@v1
+      with:
+        files: ./artifacts/*.nupkg
+        generate_release_notes: true
+        body: |
+          ## 📦 NuGet Package
+          This release is available on [NuGet.org](https://www.nuget.org/packages/Xbim.WexBlazor/${{ steps.get_version.outputs.version }})
+          
+          ```bash
+          dotnet add package Xbim.WexBlazor --version ${{ steps.get_version.outputs.version }}
+          ```
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    
     - name: Build Summary
       run: |
         if [ "${{ github.ref_type }}" == "tag" ]; then
           echo "✅ Published version ${{ steps.get_version.outputs.version }} to NuGet.org"
+          echo "✅ Created GitHub Release for v${{ steps.get_version.outputs.version }}"
         else
           echo "✅ Build successful - Package created but NOT published (push a tag to publish)"
         fi
