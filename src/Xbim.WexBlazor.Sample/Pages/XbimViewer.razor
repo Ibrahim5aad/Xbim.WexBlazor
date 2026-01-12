@@ -17,7 +17,7 @@
                          Id="xbimViewer"
                          Width="100%"
                          Height="600"
-                         BackgroundColor="#404040"
+                         BackgroundColor="@GetViewerBackgroundColor()"
                          ContainerStyle="width: 100%; height: 100%; position: relative;"
                          OnViewerInitialized="HandleViewerInitialized"
                          OnModelLoaded="HandleModelLoaded"
@@ -62,8 +62,6 @@
     private bool _modelLoaded = false;
     private bool _showFileLoader = true;
     private bool _showModelManager = true;
-    private string _backgroundColor = "#F7F7F7";
-    private string _elementIdsInput = "";
     private List<SelectedElement> _selectedElements = new();
     
     // Plugin tracking
@@ -107,6 +105,18 @@
     {
         var themeClass = ThemeService.GetThemeClass();
         await JSRuntime.InvokeVoidAsync("eval", $"document.body.className = '{themeClass}';");
+        
+        if (_xbimViewer != null && _viewerInitialized)
+        {
+            await _xbimViewer.SetBackgroundColorAsync(GetViewerBackgroundColor());
+        }
+        
+        StateHasChanged();
+    }
+    
+    private string GetViewerBackgroundColor()
+    {
+        return ThemeService.CurrentTheme == ViewerTheme.Dark ? "#404040" : "#ffffff";
     }
     
     private async Task HandleViewerInitialized(string viewerId)
@@ -282,14 +292,6 @@
         if (_xbimViewer != null && _modelLoaded)
         {
             await _xbimViewer.ResetAsync();
-        }
-    }
-    
-    private async Task UpdateBackgroundColor()
-    {
-        if (_xbimViewer != null && _viewerInitialized)
-        {
-            await _xbimViewer.SetBackgroundColorAsync(_backgroundColor);
         }
     }
     
