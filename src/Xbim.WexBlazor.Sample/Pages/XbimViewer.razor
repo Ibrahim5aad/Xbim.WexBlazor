@@ -109,6 +109,13 @@
         if (_xbimViewer != null && _viewerInitialized)
         {
             await _xbimViewer.SetBackgroundColorAsync(GetViewerBackgroundColor());
+            
+            if (_gridPlugin != null && _gridActive)
+            {
+                await _xbimViewer.RemovePluginAsync(_gridPlugin.Id);
+                _gridPlugin.Color = GetGridColor();
+                await _xbimViewer.AddPluginAsync(_gridPlugin);
+            }
         }
         
         StateHasChanged();
@@ -117,6 +124,13 @@
     private string GetViewerBackgroundColor()
     {
         return ThemeService.CurrentTheme == ViewerTheme.Dark ? "#404040" : "#ffffff";
+    }
+    
+    private double[] GetGridColor()
+    {
+        return ThemeService.CurrentTheme == ViewerTheme.Dark 
+            ? new[] { 1.0, 1.0, 1.0, 1.0 }  // White for dark theme
+            : new[] { 0.0, 0.0, 0.0, 1.0 };  // Black for light theme
     }
     
     private async Task HandleViewerInitialized(string viewerId)
@@ -133,14 +147,15 @@
         };
         await _xbimViewer!.AddPluginAsync(navigationCubePlugin);
         
-        var grid = new GridPlugin
+        _gridPlugin = new GridPlugin
         {
             Factor = 1.5,
             ZFactor = 20,
             NumberOfLines = 20,
-            Color = new[] { 1, 1, 1, 1.0 } 
+            Color = GetGridColor()
         };
-        await _xbimViewer!.AddPluginAsync(grid);
+        await _xbimViewer!.AddPluginAsync(_gridPlugin);
+        _gridActive = true;
         
         _sectionBoxPlugin = new SectionBoxPlugin
         {
