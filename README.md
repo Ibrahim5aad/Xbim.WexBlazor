@@ -5,7 +5,11 @@
 [![Build Status](https://github.com/Ibrahim5aad/Xbim.WexBlazor/actions/workflows/publish-nuget.yml/badge.svg)](https://github.com/Ibrahim5aad/Xbim.WexBlazor/actions/workflows/publish-nuget.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-A Blazor component library that wraps the @xbim/viewer JavaScript library for use in Blazor WebAssembly applications. This library allows you to display 3D building models in the wexBIM format.
+A Blazor component library that wraps the @xbim/viewer JavaScript library for use in Blazor applications. This library allows you to display 3D building models in the wexBIM format.
+
+## Screenshot
+
+![Xbim.WexBlazor in action](screenshot.png)
 
 ## Project Structure
 
