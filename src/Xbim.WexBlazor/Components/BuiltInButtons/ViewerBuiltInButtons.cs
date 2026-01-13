@@ -181,6 +181,74 @@ public static class ViewerBuiltInButtons
     }
 
     /// <summary>
+    /// Creates a hide/unhide toggle button for selected elements
+    /// </summary>
+    public static ToolbarToggleButton CreateHideToggle(
+        XbimViewerComponent viewer,
+        Func<int[]> getSelectedElements,
+        Action? onStateChanged = null)
+    {
+        return new ToolbarToggleButton
+        {
+            Icon = "bi bi-eye-slash",
+            ToggledIcon = "bi bi-eye",
+            Tooltip = "Hide Selected",
+            ToggledTooltip = "Unhide Selected",
+            IsToggled = false,
+            OnToggle = EventCallback.Factory.Create<bool>(viewer, async (isHidden) =>
+            {
+                var selected = getSelectedElements();
+                if (selected.Length > 0)
+                {
+                    if (isHidden)
+                    {
+                        await viewer.HideElementsAsync(selected);
+                    }
+                    else
+                    {
+                        await viewer.ShowElementsAsync(selected);
+                    }
+                    onStateChanged?.Invoke();
+                }
+            })
+        };
+    }
+
+    /// <summary>
+    /// Creates an isolate/unisolate toggle button for selected elements
+    /// </summary>
+    public static ToolbarToggleButton CreateIsolateToggle(
+        XbimViewerComponent viewer,
+        Func<int[]> getSelectedElements,
+        Action? onStateChanged = null)
+    {
+        return new ToolbarToggleButton
+        {
+            Icon = "bi bi-funnel",
+            ToggledIcon = "bi bi-funnel-fill",
+            Tooltip = "Isolate Selected",
+            ToggledTooltip = "Unisolate",
+            IsToggled = false,
+            OnToggle = EventCallback.Factory.Create<bool>(viewer, async (isIsolated) =>
+            {
+                if (isIsolated)
+                {
+                    var selected = getSelectedElements();
+                    if (selected.Length > 0)
+                    {
+                        await viewer.IsolateElementsAsync(selected);
+                    }
+                }
+                else
+                {
+                    await viewer.UnisolateElementsAsync();
+                }
+                onStateChanged?.Invoke();
+            })
+        };
+    }
+
+    /// <summary>
     /// Creates a visually grouped set of two toggle buttons for clipping plane control
     /// </summary>
     /// <param name="viewer">The viewer component</param>

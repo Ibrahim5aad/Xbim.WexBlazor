@@ -140,6 +140,37 @@ public class XbimViewerInterop : JsInteropBase
     }
 
     /// <summary>
+    /// Isolates specific elements (hides everything else)
+    /// </summary>
+    /// <param name="viewerId">The viewer reference ID</param>
+    /// <param name="elementIds">Array of element IDs to isolate</param>
+    /// <returns>True if successful</returns>
+    public async ValueTask<bool> IsolateElementsAsync(string viewerId, int[] elementIds)
+    {
+        return await InvokeAsync<bool>("isolateElements", viewerId, elementIds);
+    }
+
+    /// <summary>
+    /// Unisolates elements (shows all hidden elements)
+    /// </summary>
+    /// <param name="viewerId">The viewer reference ID</param>
+    /// <returns>True if successful</returns>
+    public async ValueTask<bool> UnisolateElementsAsync(string viewerId)
+    {
+        return await InvokeAsync<bool>("unisolateElements", viewerId);
+    }
+
+    /// <summary>
+    /// Gets the list of currently isolated element IDs
+    /// </summary>
+    /// <param name="viewerId">The viewer reference ID</param>
+    /// <returns>Array of isolated element IDs</returns>
+    public async ValueTask<int[]> GetIsolatedElementsAsync(string viewerId)
+    {
+        return await InvokeAsync<int[]>("getIsolatedElements", viewerId);
+    }
+
+    /// <summary>
     /// Resets the viewer to its initial state
     /// </summary>
     /// <param name="viewerId">The viewer reference ID</param>

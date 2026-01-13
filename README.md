@@ -75,6 +75,67 @@ Example usage of the xBIM Viewer component:
 }
 ```
 
+## Theming and Customization
+
+The library supports light and dark themes with customizable accent colors.
+
+### Setting Up the Theme Service
+
+Register the `ThemeService` in your `Program.cs`:
+
+```csharp
+using Xbim.WexBlazor.Services;
+using Xbim.WexBlazor.Models;
+
+var themeService = new ThemeService();
+themeService.SetTheme(ViewerTheme.Dark);
+themeService.SetAccentColors(
+    lightColor: "#0969da",
+    darkColor: "#4da3ff"
+);
+builder.Services.AddSingleton(themeService);
+```
+
+### Using the Theme Service
+
+Inject and use the theme service in your components:
+
+```razor
+@inject ThemeService ThemeService
+
+<button @onclick="ToggleTheme">Toggle Theme</button>
+
+@code {
+    private void ToggleTheme()
+    {
+        ThemeService.ToggleTheme();
+    }
+    
+    protected override async Task OnInitializedAsync()
+    {
+        ThemeService.OnThemeChanged += StateHasChanged;
+    }
+}
+```
+
+### Customizing Accent Colors
+
+You can change the accent colors at runtime:
+
+```csharp
+ThemeService.SetAccentColors(
+    lightColor: "#d73a49",
+    darkColor: "#ff6b6b"
+);
+```
+
+The accent color is used for:
+- Highlighted elements
+- Active buttons
+- Selected navigation modes
+- Button group labels
+- Focus indicators
+
 ## wexBIM Format
 
 The viewer requires 3D models in the wexBIM format. You can convert IFC models to wexBIM using tools from the [XbimEssentials](https://github.com/xBimTeam/XbimEssentials) library.

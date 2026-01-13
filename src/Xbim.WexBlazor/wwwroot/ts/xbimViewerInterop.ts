@@ -317,6 +317,156 @@ export function showElements(viewerId: string, elementIds: number[]): boolean {
     }
 }
 
+// Get all products from the model region
+export function getAllProducts(viewerId: string): Array<{id: number, model: number}> {
+    try {
+        const viewer = viewerInstances.get(viewerId);
+        if (!viewer) {
+            console.error(`Viewer with id ${viewerId} not found`);
+            return [];
+        }
+        
+        const allProducts: Array<{id: number, model: number}> = [];
+        const viewerAny = viewer as any;
+        
+        // Iterate through all model handles
+        if (!viewerAny.modelHandles || viewerAny.modelHandles.length === 0) {
+            console.warn('No model handles found');
+            return [];
+        }
+        
+        console.log(`Found ${viewerAny.modelHandles.length} model handle(s)`);
+        
+        for (const handle of viewerAny.modelHandles) {
+            const modelId = handle.id;
+            console.log(`Processing model ${modelId}`);
+            
+            // Try to get the region for this model
+            try {
+                const region = viewerAny.getRegion(modelId);
+                if (region && region.population) {
+                    console.log(`Model ${modelId} has ${region.population} products`);
+                    
+                    // The region.population is an array of product IDs
+                    for (const productId of region.population) {
+                        if (productId > 0) {
+                            allProducts.push({ id: productId, model: modelId });
+                        }
+                    }
+                }
+            } catch (e) {
+                console.warn(`Could not get region for model ${modelId}:`, e);
+            }
+        }
+        
+        console.log(`Found ${allProducts.length} products total`);
+        return allProducts;
+    } catch (error) {
+        console.error('Error getting all products:', error);
+        return [];
+    }
+}
+
+// Isolate specific elements (hide everything else)
+export function isolateElements(viewerId: string, elementIds: number[]): boolean {
+    try {
+        const viewer = viewerInstances.get(viewerId);
+        if (!viewer) {
+            console.error(`Viewer with id ${viewerId} not found`);
+            return false;
+        }
+        
+        if (elementIds.length === 0) {
+            console.warn('No elements to isolate');
+            return false;
+        }
+        
+        // Get all products to find what to hide
+        const allProducts = getAllProducts(viewerId);
+        console.log(`getAllProducts returned ${allProducts.length} products`);
+        
+        if (allProducts.length === 0) {
+            console.error('No products found to isolate');
+            return false;
+        }
+        
+        // Find products to hide (all except the ones to isolate)
+        const elementsSet = new Set(elementIds);
+        const toHide = allProducts
+            .filter(p => !elementsSet.has(p.id))
+            .map(p => p.id);
+        
+        console.log(`Elements to isolate: ${elementIds.join(', ')}`);
+        console.log(`Elements to hide: ${toHide.length} out of ${allProducts.length} total`);
+        
+        // First, ensure the isolated elements are visible (remove any HIDDEN state)
+        viewer.removeState(State.HIDDEN, elementIds);
+        
+        // Then hide all other elements
+        if (toHide.length > 0) {
+            viewer.setState(State.HIDDEN, toHide);
+            console.log(`✓ Isolated ${elementIds.length} elements by hiding ${toHide.length} elements`);
+        }
+        
+        return true;
+    } catch (error) {
+        console.error('Error isolating elements:', error);
+        return false;
+    }
+}
+
+// Unisolate (show all hidden elements)
+export function unisolateElements(viewerId: string): boolean {
+    try {
+        const viewer = viewerInstances.get(viewerId);
+        if (!viewer) {
+            console.error(`Viewer with id ${viewerId} not found`);
+            return false;
+        }
+        
+        // Show all hidden elements by removing the HIDDEN state
+        const hiddenProducts = viewer.getProductsWithState(State.HIDDEN);
+        
+        if (hiddenProducts.length > 0) {
+            const hiddenIds = hiddenProducts.map((p: any) => p.id);
+            viewer.removeState(State.HIDDEN, hiddenIds);
+            console.log(`Unisolated by showing ${hiddenIds.length} hidden elements`);
+        }
+        
+        return true;
+    } catch (error) {
+        console.error('Error unisolating elements:', error);
+        return false;
+    }
+}
+
+export function getIsolatedElements(viewerId: string): number[] {
+    try {
+        const viewer = viewerInstances.get(viewerId);
+        if (!viewer) {
+            console.error(`Viewer with id ${viewerId} not found`);
+            return [];
+        }
+        
+        // Get all products
+        const allProducts = getAllProducts(viewerId);
+        
+        // Get hidden products
+        const hiddenProducts = viewer.getProductsWithState(State.HIDDEN);
+        const hiddenSet = new Set(hiddenProducts.map((p: any) => p.id));
+        
+        // Isolated elements are the visible ones (not hidden)
+        const isolated = allProducts
+            .filter(p => !hiddenSet.has(p.id))
+            .map(p => p.id);
+        
+        return isolated;
+    } catch (error) {
+        console.error('Error getting isolated elements:', error);
+        return [];
+    }
+}
+
 // Generic method to invoke any viewer method
 export async function invokeViewerMethod(viewerId: string, methodName: string, ...args: any[]): Promise<any> {
     try {

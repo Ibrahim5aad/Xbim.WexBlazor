@@ -63,6 +63,7 @@
     
     // Plugin tracking
     private bool _gridActive = false;
+    private bool _interactivePluginsInitialized = false;
     private SectionBoxPlugin? _sectionBoxPlugin;
     private GridPlugin? _gridPlugin;
     private ClippingPlanePlugin? _clippingPlanePlugin;
@@ -101,6 +102,8 @@
         var themeClass = ThemeService.GetThemeClass();
         await JSRuntime.InvokeVoidAsync("eval", $"document.body.className = '{themeClass}';");
         
+        await ApplyCustomAccentColorAsync();
+        
         if (_xbimViewer != null)
         {
             await _xbimViewer.SetBackgroundColorAsync(GetViewerBackgroundColor());
@@ -114,6 +117,46 @@
         }
         
         StateHasChanged();
+    }
+    
+    private async Task ApplyCustomAccentColorAsync()
+    {
+        var accentColor = ThemeService.CurrentAccentColor;
+        var hoverColor = LightenColor(accentColor, 0.15);
+        var bgColor = AddAlpha(accentColor, 0.2);
+        
+        var cssVars = $@"
+            document.body.style.setProperty('--xbim-accent-primary', '{accentColor}', 'important');
+            document.body.style.setProperty('--xbim-accent-primary-hover', '{hoverColor}', 'important');
+            document.body.style.setProperty('--xbim-accent-primary-bg', '{bgColor}', 'important');
+            document.body.style.setProperty('--xbim-border-hover', '{accentColor}', 'important');
+        ";
+        
+        await JSRuntime.InvokeVoidAsync("eval", cssVars);
+    }
+    
+    private string LightenColor(string hex, double amount)
+    {
+        hex = hex.TrimStart('#');
+        var r = Convert.ToInt32(hex.Substring(0, 2), 16);
+        var g = Convert.ToInt32(hex.Substring(2, 2), 16);
+        var b = Convert.ToInt32(hex.Substring(4, 2), 16);
+        
+        r = Math.Min(255, (int)(r + (255 - r) * amount));
+        g = Math.Min(255, (int)(g + (255 - g) * amount));
+        b = Math.Min(255, (int)(b + (255 - b) * amount));
+        
+        return $"#{r:X2}{g:X2}{b:X2}";
+    }
+    
+    private string AddAlpha(string hex, double alpha)
+    {
+        hex = hex.TrimStart('#');
+        var r = Convert.ToInt32(hex.Substring(0, 2), 16);
+        var g = Convert.ToInt32(hex.Substring(2, 2), 16);
+        var b = Convert.ToInt32(hex.Substring(4, 2), 16);
+        
+        return $"rgba({r}, {g}, {b}, {alpha})";
     }
     
     private string GetViewerBackgroundColor()
@@ -150,17 +193,6 @@
         await _xbimViewer!.AddPluginAsync(_gridPlugin);
         _gridActive = true;
         
-        _sectionBoxPlugin = new SectionBoxPlugin
-        {
-            IsStopped = true
-        };
-        await _xbimViewer!.AddPluginAsync(_sectionBoxPlugin);
-        
-        _clippingPlanePlugin = new ClippingPlanePlugin
-        {
-            IsStopped = true
-        };
-        await _xbimViewer!.AddPluginAsync(_clippingPlanePlugin);
         await InvokeAsync(StateHasChanged);
     }
     
@@ -176,6 +208,8 @@
             ViewerBuiltInButtons.CreateViewsDropdown(_xbimViewer),
             ViewerBuiltInButtons.CreateNavigationButtons(_xbimViewer),
             ViewerBuiltInButtons.CreateXRayToggle(_xbimViewer),
+            ViewerBuiltInButtons.CreateHideToggle(_xbimViewer, GetSelectedElementIds, StateHasChanged),
+            ViewerBuiltInButtons.CreateIsolateToggle(_xbimViewer, GetSelectedElementIds, StateHasChanged),
             ViewerBuiltInButtons.CreateClearSelectionButton(_xbimViewer),
             ViewerBuiltInButtons.CreateSectionBoxButtons(_xbimViewer, () => _sectionBoxPlugin, "Box", StateHasChanged),
             ViewerBuiltInButtons.CreateClippingPlaneButtons(_xbimViewer, () => _clippingPlanePlugin, "Plane", StateHasChanged),
@@ -186,6 +220,11 @@
                 OnClick = EventCallback.Factory.Create(this, ToggleTheme)
             }
         };
+    }
+
+    private int[] GetSelectedElementIds()
+    {
+        return _selectedElements.Select(e => e.Id).ToArray();
     }
     
     private async Task ToggleTheme()
@@ -198,6 +237,24 @@
     {
         if (success)
         {
+            // Initialize interactive plugins after first model load (they need geometry)
+            if (!_interactivePluginsInitialized && _xbimViewer != null)
+            {
+                _sectionBoxPlugin = new SectionBoxPlugin
+                {
+                    IsStopped = true
+                };
+                await _xbimViewer.AddPluginAsync(_sectionBoxPlugin);
+                
+                _clippingPlanePlugin = new ClippingPlanePlugin
+                {
+                    IsStopped = true
+                };
+                await _xbimViewer.AddPluginAsync(_clippingPlanePlugin);
+                
+                _interactivePluginsInitialized = true;
+            }
+            
             await ZoomFit();
         }
         await InvokeAsync(StateHasChanged);

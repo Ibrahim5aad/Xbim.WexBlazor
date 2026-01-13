@@ -656,6 +656,72 @@
     }
 
     /// <summary>
+    /// Hides specific elements
+    /// </summary>
+    public async Task<bool> HideElementsAsync(int[] elementIds)
+    {
+        if (_xbimViewer != null && !string.IsNullOrEmpty(_viewerId) && _viewerInitialized && _modelLoaded)
+        {
+            return await _xbimViewer.HideElementsAsync(_viewerId, elementIds);
+        }
+        
+        return false;
+    }
+
+    /// <summary>
+    /// Shows specific elements
+    /// </summary>
+    public async Task<bool> ShowElementsAsync(int[] elementIds)
+    {
+        if (_xbimViewer != null && !string.IsNullOrEmpty(_viewerId) && _viewerInitialized && _modelLoaded)
+        {
+            return await _xbimViewer.ShowElementsAsync(_viewerId, elementIds);
+        }
+        
+        return false;
+    }
+
+    /// <summary>
+    /// Isolates specific elements (hides everything else)
+    /// </summary>
+    public async Task<bool> IsolateElementsAsync(int[] elementIds)
+    {
+        if (_xbimViewer != null && !string.IsNullOrEmpty(_viewerId) && _viewerInitialized && _modelLoaded)
+        {
+            return await _xbimViewer.IsolateElementsAsync(_viewerId, elementIds);
+        }
+        
+        return false;
+    }
+
+    /// <summary>
+    /// Unisolates elements (shows all hidden elements)
+    /// </summary>
+    public async Task<bool> UnisolateElementsAsync()
+    {
+        if (_xbimViewer != null && !string.IsNullOrEmpty(_viewerId) && _viewerInitialized && _modelLoaded)
+        {
+            return await _xbimViewer.UnisolateElementsAsync(_viewerId);
+        }
+        
+        return false;
+    }
+
+    /// <summary>
+    /// Gets the list of currently isolated element IDs
+    /// </summary>
+    /// <returns>Array of isolated element IDs</returns>
+    public async Task<int[]> GetIsolatedElementsAsync()
+    {
+        if (_xbimViewer != null && !string.IsNullOrEmpty(_viewerId) && _viewerInitialized && _modelLoaded)
+        {
+            return await _xbimViewer.GetIsolatedElementsAsync(_viewerId);
+        }
+        
+        return Array.Empty<int>();
+    }
+
+    /// <summary>
     /// Dispose the viewer and JS interop
     /// </summary>
     public async ValueTask DisposeAsync()
