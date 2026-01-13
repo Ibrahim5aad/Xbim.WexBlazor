@@ -1,29 +1,29 @@
 /* Light Theme (Default) */
 .theme-light {
     --xbim-bg-primary: #ffffff;
-    --xbim-bg-secondary: rgba(255, 255, 255, 0.95);
-    --xbim-bg-tertiary: rgba(255, 255, 255, 0.8);
-    --xbim-bg-panel: rgba(255, 255, 255, 0.98);
-    --xbim-bg-hover: #f5f5f5;
-    --xbim-bg-active: #e0e0e0;
+    --xbim-bg-secondary: #f6f8fa;
+    --xbim-bg-tertiary: #f6f8fa;
+    --xbim-bg-panel: #f6f8fa;
+    --xbim-bg-hover: #f3f4f6;
+    --xbim-bg-active: #e5e7eb;
     
-    --xbim-text-primary: #333333;
-    --xbim-text-secondary: #666666;
-    --xbim-text-tertiary: #999999;
-    --xbim-text-muted: #757575;
+    --xbim-text-primary: #24292f;
+    --xbim-text-secondary: #57606a;
+    --xbim-text-tertiary: #6e7781;
+    --xbim-text-muted: #6e7781;
     
-    --xbim-border-primary: #e0e0e0;
-    --xbim-border-secondary: rgba(0, 0, 0, 0.1);
+    --xbim-border-primary: #d0d7de;
+    --xbim-border-secondary: #d0d7de;
     --xbim-border-hover: #0066cc;
     
     --xbim-accent-primary: #0066cc;
     --xbim-accent-primary-hover: #0052a3;
     --xbim-accent-primary-bg: rgba(0, 102, 204, 0.1);
     
-    --xbim-shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.1);
-    --xbim-shadow-md: 0 2px 8px rgba(0, 0, 0, 0.15);
-    --xbim-shadow-lg: 0 4px 12px rgba(0, 0, 0, 0.15);
-    --xbim-shadow-xl: 0 8px 32px rgba(0, 0, 0, 0.2);
+    --xbim-shadow-sm: none;
+    --xbim-shadow-md: none;
+    --xbim-shadow-lg: none;
+    --xbim-shadow-xl: none;
     
     --xbim-success: #28a745;
     --xbim-success-bg: rgba(40, 167, 69, 0.1);
@@ -41,30 +41,30 @@
 
 /* Dark Theme */
 .theme-dark {
-    --xbim-bg-primary: #1e1e1e;
-    --xbim-bg-secondary: rgba(30, 30, 30, 0.98);
-    --xbim-bg-tertiary: rgba(45, 45, 45, 0.9);
-    --xbim-bg-panel: rgba(30, 30, 30, 0.98);
-    --xbim-bg-hover: #2a2a2a;
-    --xbim-bg-active: #333333;
+    --xbim-bg-primary: #0d1117;
+    --xbim-bg-secondary: #161b22;
+    --xbim-bg-tertiary: #21262d;
+    --xbim-bg-panel: #161b22;
+    --xbim-bg-hover: #21262d;
+    --xbim-bg-active: #30363d;
     
-    --xbim-text-primary: #e0e0e0;
-    --xbim-text-secondary: #b0b0b0;
-    --xbim-text-tertiary: #808080;
-    --xbim-text-muted: #757575;
+    --xbim-text-primary: #c9d1d9;
+    --xbim-text-secondary: #8b949e;
+    --xbim-text-tertiary: #6e7681;
+    --xbim-text-muted: #6e7681;
     
-    --xbim-border-primary: #404040;
-    --xbim-border-secondary: rgba(255, 255, 255, 0.1);
+    --xbim-border-primary: #444c56;
+    --xbim-border-secondary: #444c56;
     --xbim-border-hover: #4da3ff;
     
     --xbim-accent-primary: #4da3ff;
     --xbim-accent-primary-hover: #66b3ff;
     --xbim-accent-primary-bg: rgba(77, 163, 255, 0.2);
     
-    --xbim-shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.3);
-    --xbim-shadow-md: 0 2px 8px rgba(0, 0, 0, 0.4);
-    --xbim-shadow-lg: 0 4px 12px rgba(0, 0, 0, 0.5);
-    --xbim-shadow-xl: 0 8px 32px rgba(0, 0, 0, 0.6);
+    --xbim-shadow-sm: none;
+    --xbim-shadow-md: none;
+    --xbim-shadow-lg: none;
+    --xbim-shadow-xl: none;
     
     --xbim-success: #4caf50;
     --xbim-success-bg: rgba(76, 175, 80, 0.2);

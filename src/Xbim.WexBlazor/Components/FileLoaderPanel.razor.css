@@ -6,9 +6,9 @@
     width: 90%;
     max-width: 500px;
     background: var(--xbim-bg-primary);
-    border-radius: 12px;
+    border-radius: 6px;
     box-shadow: var(--xbim-shadow-xl);
-    border: 1px solid var(--xbim-border-secondary);
+    border: 1px solid var(--xbim-border-primary);
     z-index: 2000;
     opacity: 0;
     visibility: hidden;

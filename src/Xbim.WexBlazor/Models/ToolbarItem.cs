@@ -51,3 +51,23 @@ public class ToolbarButtonGroup : ToolbarItemBase
     public string? Label { get; set; }
 }
 
+/// <summary>
+/// Radio button for use in ToolbarRadioButtonGroup (single selection)
+/// </summary>
+public class ToolbarRadioButton : ToolbarItemBase
+{
+    public bool IsSelected { get; set; }
+    public EventCallback OnClick { get; set; }
+    public object? Value { get; set; }
+}
+
+/// <summary>
+/// Radio button group where only one button can be selected at a time
+/// </summary>
+public class ToolbarRadioButtonGroup : ToolbarItemBase
+{
+    public List<ToolbarRadioButton> Items { get; set; } = new();
+    public string? Label { get; set; }
+    public int SelectedIndex { get; set; } = 0;
+    public EventCallback<int> OnSelectionChanged { get; set; }
+}

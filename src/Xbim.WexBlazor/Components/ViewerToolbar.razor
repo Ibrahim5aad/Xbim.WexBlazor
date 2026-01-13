@@ -6,7 +6,31 @@
     {
         @foreach (var item in Items)
         {
-            @if (item is ToolbarButtonGroup group)
+            @if (item is ToolbarRadioButtonGroup radioGroup)
+            {
+                <div class="xbim-toolbar-group xbim-toolbar-radio-group @radioGroup.CssClass" title="@radioGroup.Tooltip">
+                    @if (!string.IsNullOrEmpty(radioGroup.Label))
+                    {
+                        <div class="xbim-toolbar-group-label">@radioGroup.Label</div>
+                    }
+                    <div class="xbim-toolbar-group-items">
+                        @foreach (var radioButton in radioGroup.Items)
+                        {
+                            <button type="button" 
+                                    class="xbim-toolbar-btn xbim-toolbar-radio-btn @radioButton.CssClass @(radioButton.IsSelected ? "selected" : "") @(radioButton.Disabled ? "disabled" : "")"
+                                    title="@radioButton.Tooltip"
+                                    disabled="@radioButton.Disabled"
+                                    @onclick="async () => await HandleRadioSelection(radioGroup, radioButton)">
+                                @if (!string.IsNullOrEmpty(radioButton.Icon))
+                                {
+                                    <i class="@radioButton.Icon"></i>
+                                }
+                            </button>
+                        }
+                    </div>
+                </div>
+            }
+            else if (item is ToolbarButtonGroup group)
             {
                 <div class="xbim-toolbar-group @group.CssClass" title="@group.Tooltip">
                     @if (!string.IsNullOrEmpty(group.Label))
@@ -123,6 +147,21 @@
     {
         toggle.IsToggled = !toggle.IsToggled;
         await toggle.OnToggle.InvokeAsync(toggle.IsToggled);
+    }
+
+    private async Task HandleRadioSelection(ToolbarRadioButtonGroup group, ToolbarRadioButton selectedButton)
+    {
+        foreach (var button in group.Items)
+        {
+            button.IsSelected = false;
+        }
+        
+        selectedButton.IsSelected = true;
+        var selectedIndex = group.Items.IndexOf(selectedButton);
+        group.SelectedIndex = selectedIndex;
+        
+        await selectedButton.OnClick.InvokeAsync();
+        await group.OnSelectionChanged.InvokeAsync(selectedIndex);
     }
 
     private void ToggleDropdown(string dropdownId)

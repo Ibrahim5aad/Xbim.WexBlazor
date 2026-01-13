@@ -320,5 +320,90 @@ public static class ViewerBuiltInButtons
             }
         };
     }
+
+    /// <summary>
+    /// Creates a navigation controls radio button group where only one navigation mode can be active
+    /// </summary>
+    public static ToolbarRadioButtonGroup CreateNavigationButtons(
+        XbimViewerComponent viewer,
+        string? label = "Navigation",
+        int defaultSelectedIndex = 0)
+    {
+        return new ToolbarRadioButtonGroup
+        {
+            Label = label,
+            Tooltip = "Navigation Controls",
+            SelectedIndex = defaultSelectedIndex,
+            Items = new List<ToolbarRadioButton>
+            {
+                new ToolbarRadioButton
+                {
+                    Icon = "bi bi-globe",
+                    Tooltip = "Orbit",
+                    IsSelected = defaultSelectedIndex == 0,
+                    Value = NavigationMode.Orbit,
+                    OnClick = EventCallback.Factory.Create(viewer, async () =>
+                    {
+                        await viewer.CallViewerMethodAsync<object>("set", new { navigationMode = NavigationMode.Orbit });
+                    })
+                },
+                new ToolbarRadioButton
+                {
+                    Icon = "bi bi-globe-americas",
+                    Tooltip = "Free Orbit",
+                    IsSelected = defaultSelectedIndex == 1,
+                    Value = NavigationMode.FreeOrbit,
+                    OnClick = EventCallback.Factory.Create(viewer, async () =>
+                    {
+                        await viewer.CallViewerMethodAsync<object>("set", new { navigationMode = NavigationMode.FreeOrbit });
+                    })
+                },
+                new ToolbarRadioButton
+                {
+                    Icon = "bi bi-arrows-move",
+                    Tooltip = "Pan",
+                    IsSelected = defaultSelectedIndex == 2,
+                    Value = NavigationMode.Pan,
+                    OnClick = EventCallback.Factory.Create(viewer, async () =>
+                    {
+                        await viewer.CallViewerMethodAsync<object>("set", new { navigationMode = NavigationMode.Pan });
+                    })
+                },
+                new ToolbarRadioButton
+                {
+                    Icon = "bi bi-zoom-in",
+                    Tooltip = "Zoom",
+                    IsSelected = defaultSelectedIndex == 3,
+                    Value = NavigationMode.Zoom,
+                    OnClick = EventCallback.Factory.Create(viewer, async () =>
+                    {
+                        await viewer.CallViewerMethodAsync<object>("set", new { navigationMode = NavigationMode.Zoom });
+                    })
+                },
+                new ToolbarRadioButton
+                {
+                    Icon = "bi bi-eye",
+                    Tooltip = "Look Around",
+                    IsSelected = defaultSelectedIndex == 4,
+                    Value = NavigationMode.LookAround,
+                    OnClick = EventCallback.Factory.Create(viewer, async () =>
+                    {
+                        await viewer.CallViewerMethodAsync<object>("set", new { navigationMode = NavigationMode.LookAround });
+                    })
+                },
+                new ToolbarRadioButton
+                {
+                    Icon = "bi bi-person-walking",
+                    Tooltip = "Walk",
+                    IsSelected = defaultSelectedIndex == 5,
+                    Value = NavigationMode.Walk,
+                    OnClick = EventCallback.Factory.Create(viewer, async () =>
+                    {
+                        await viewer.CallViewerMethodAsync<object>("set", new { navigationMode = NavigationMode.Walk });
+                    })
+                }
+            }
+        };
+    }
 }
 

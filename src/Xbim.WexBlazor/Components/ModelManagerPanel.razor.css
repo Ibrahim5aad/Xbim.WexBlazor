@@ -1,10 +1,9 @@
 .model-manager-panel {
     position: absolute;
     background: var(--xbim-bg-panel);
-    backdrop-filter: blur(10px);
-    border-radius: 8px;
+    border-radius: 6px;
     box-shadow: var(--xbim-shadow-lg);
-    border: 1px solid var(--xbim-border-secondary);
+    border: 1px solid var(--xbim-border-primary);
     z-index: 1000;
     min-width: 300px;
     max-width: 400px;
@@ -45,7 +44,7 @@
     align-items: center;
     justify-content: space-between;
     padding: 12px 16px;
-    border-bottom: 1px solid var(--xbim-border-secondary);
+    border-bottom: 1px solid var(--xbim-border-primary);
     background: var(--xbim-bg-tertiary);
 }
 
@@ -288,7 +287,7 @@
 
 .model-manager-footer {
     padding: 8px;
-    border-top: 1px solid var(--xbim-border-secondary);
+    border-top: 1px solid var(--xbim-border-primary);
     background: var(--xbim-bg-tertiary);
 }
 

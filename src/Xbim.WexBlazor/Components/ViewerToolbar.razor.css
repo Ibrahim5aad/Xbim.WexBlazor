@@ -4,10 +4,9 @@
     gap: 4px;
     padding: 8px;
     background: var(--xbim-bg-secondary);
-    backdrop-filter: blur(10px);
-    border-radius: 8px;
+    border-radius: 6px;
     box-shadow: var(--xbim-shadow-md);
-    border: 1px solid var(--xbim-border-secondary);
+    border: 1px solid var(--xbim-border-primary);
     z-index: 1000;
     transition: all 0.2s ease;
 }
@@ -110,6 +109,18 @@
     border-color: var(--xbim-accent-primary-hover);
 }
 
+.xbim-toolbar-radio-btn.selected {
+    background: var(--xbim-accent-primary);
+    border-color: var(--xbim-accent-primary);
+    color: white;
+}
+
+.xbim-toolbar-radio-btn.selected:hover:not(.disabled) {
+    background: var(--xbim-accent-primary-hover);
+    border-color: var(--xbim-accent-primary-hover);
+    transform: translateY(-1px);
+}
+
 .xbim-toolbar-dropdown {
     position: relative;
     height: fit-content;
@@ -203,14 +214,6 @@
     border: 1px solid var(--xbim-accent-primary-bg);
     border-radius: 6px;
     position: relative;
-}
-
-.xbim-toolbar-group::before,
-.xbim-toolbar-group::after {
-    content: '';
-    position: absolute;
-    background: var(--xbim-accent-primary);
-    opacity: 0.3;
 }
 
 .xbim-toolbar-top .xbim-toolbar-group::before,

@@ -52,5 +52,19 @@ public static class ViewerConstants
         public const int HoverOver = 250;
         public const int Unstyled = 225;
     }
+
+    /// <summary>
+    /// Navigation mode values for viewer interaction
+    /// </summary>
+    public static class NavigationMode
+    {
+        public const string Orbit = "orbit";
+        public const string FreeOrbit = "free-orbit";
+        public const string Pan = "pan";
+        public const string Zoom = "zoom";
+        public const string LookAround = "look-around";
+        public const string Walk = "walk";
+        public const string None = "none";
+    }
 }
 
