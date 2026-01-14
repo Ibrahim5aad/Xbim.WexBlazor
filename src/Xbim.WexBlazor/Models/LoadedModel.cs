@@ -1,9 +1,11 @@
+using Xbim.Common;
+
 namespace Xbim.WexBlazor.Models;
 
 /// <summary>
 /// Represents a model loaded in the viewer
 /// </summary>
-public class LoadedModel
+public class LoadedModel : IDisposable
 {
     /// <summary>
     /// Unique identifier for this model in the viewer
@@ -49,6 +51,31 @@ public class LoadedModel
     /// Custom tag data associated with the model
     /// </summary>
     public object? Tag { get; set; }
+    
+    /// <summary>
+    /// The IFC model (for property access). Only available when loaded from IFC file.
+    /// </summary>
+    public IModel? IfcModel { get; set; }
+    
+    /// <summary>
+    /// Whether this model has property data available (IFC model loaded)
+    /// </summary>
+    public bool HasProperties => IfcModel != null;
+    
+    /// <summary>
+    /// Original file format (IFC, wexbim, etc.)
+    /// </summary>
+    public ModelFormat OriginalFormat { get; set; } = ModelFormat.Wexbim;
+    
+    public void Dispose()
+    {
+        if (IfcModel is IDisposable disposable)
+        {
+            disposable.Dispose();
+        }
+        IfcModel = null;
+        GC.SuppressFinalize(this);
+    }
 }
 
 /// <summary>
@@ -59,6 +86,27 @@ public enum ModelSourceType
     LocalFile,
     Url,
     Blob
+}
+
+/// <summary>
+/// Original format of the model file
+/// </summary>
+public enum ModelFormat
+{
+    /// <summary>
+    /// wexbim format (geometry only)
+    /// </summary>
+    Wexbim,
+    
+    /// <summary>
+    /// IFC format (full BIM data)
+    /// </summary>
+    Ifc,
+    
+    /// <summary>
+    /// Compressed IFC format
+    /// </summary>
+    IfcZip
 }
 
 /// <summary>

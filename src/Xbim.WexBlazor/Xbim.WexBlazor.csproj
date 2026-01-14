@@ -40,7 +40,10 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="Microsoft.Web.LibraryManager.Build" Version="3.0.71" />
-    <PackageReference Include="Xbim.Essentials" Version="6.0.554" />
+    <PackageReference Include="Xbim.Essentials" Version="6.0.563" />
+    <!-- xBIM Geometry Engine v6 for IFC to wexbim conversion (server-side only) -->
+    <PackageReference Include="Xbim.Geometry.Engine.Interop" Version="6.3.873-netcore" />
+    <PackageReference Include="Xbim.ModelGeometry.Scene" Version="6.3.873-netcore" />
   </ItemGroup>
 
   <!-- Include the generated JavaScript files in the package -->

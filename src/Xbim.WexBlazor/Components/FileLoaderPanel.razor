@@ -78,19 +78,36 @@
         {
             <div class="file-loader-tab-content">
                 <div class="mb-3">
-                    <label class="form-label">Select wexBIM File</label>
+                    <label class="form-label">Select Model File</label>
                     <InputFile class="form-control" 
                               OnChange="HandleFileSelected" 
-                              accept=".wexbim"
+                              accept="@GetAcceptedFormats()"
                               disabled="@IsLoading" />
+                    <div class="form-text">
+                        @if (AllowIfcFiles)
+                        {
+                            <span>Supported formats: <strong>IFC</strong>, <strong>IFC-ZIP</strong>, <strong>wexBIM</strong></span>
+                        }
+                        else
+                        {
+                            <span>Supported format: <strong>wexBIM</strong></span>
+                        }
+                    </div>
                 </div>
 
                 @if (!string.IsNullOrEmpty(_selectedFileName))
                 {
-                    <div class="alert alert-info">
-                        <i class="bi bi-file-earmark-binary"></i>
+                    <div class="alert @GetFileAlertClass()">
+                        <i class="bi @GetFileIcon()"></i>
                         <strong>Selected:</strong> @_selectedFileName
-                        <span class="badge bg-primary ms-2">@_selectedFileSize</span>
+                        <span class="badge @GetFormatBadgeClass() ms-2">@GetFormatName()</span>
+                        <span class="badge bg-secondary ms-1">@_selectedFileSize</span>
+                        @if (_selectedFormat == ModelFormat.Ifc || _selectedFormat == ModelFormat.IfcZip)
+                        {
+                            <div class="mt-2 small">
+                                <i class="bi bi-info-circle"></i> IFC files will be processed to generate geometry and enable property viewing.
+                            </div>
+                        }
                     </div>
                 }
             </div>
@@ -143,7 +160,7 @@
                     <div class="spinner-border spinner-border-sm me-2" role="status">
                         <span class="visually-hidden">Loading...</span>
                     </div>
-                    <span>Loading model...</span>
+                    <span>@(ProcessingMessage ?? GetLoadingMessage())</span>
                 </div>
                 @if (_loadingProgress > 0)
                 {
@@ -180,6 +197,12 @@
 
     [Parameter]
     public bool AllowCustomHeaders { get; set; } = true;
+    
+    /// <summary>
+    /// Whether to allow loading IFC files directly (requires server-side processing)
+    /// </summary>
+    [Parameter]
+    public bool AllowIfcFiles { get; set; } = true;
 
     [Parameter]
     public string? CssClass { get; set; }
@@ -198,6 +221,12 @@
 
     [Parameter]
     public List<DemoModel>? DemoModels { get; set; }
+    
+    /// <summary>
+    /// Processing message to show during IFC conversion
+    /// </summary>
+    [Parameter]
+    public string? ProcessingMessage { get; set; }
 
     private string _activeTab = "local";
     
@@ -218,6 +247,82 @@
     private int _loadingProgress;
     private bool IsLoading;
     private string? _loadingModelPath;
+    private ModelFormat _selectedFormat = ModelFormat.Wexbim;
+    
+    private string GetAcceptedFormats()
+    {
+        return AllowIfcFiles ? ".ifc,.ifczip,.wexbim" : ".wexbim";
+    }
+    
+    private string GetFileIcon()
+    {
+        return _selectedFormat switch
+        {
+            ModelFormat.Ifc => "bi-file-earmark-code",
+            ModelFormat.IfcZip => "bi-file-earmark-zip",
+            _ => "bi-file-earmark-binary"
+        };
+    }
+    
+    private string GetFileAlertClass()
+    {
+        return _selectedFormat switch
+        {
+            ModelFormat.Ifc or ModelFormat.IfcZip => "alert-success",
+            _ => "alert-info"
+        };
+    }
+    
+    private string GetFormatBadgeClass()
+    {
+        return _selectedFormat switch
+        {
+            ModelFormat.Ifc or ModelFormat.IfcZip => "bg-success",
+            _ => "bg-primary"
+        };
+    }
+    
+    private string GetFormatName()
+    {
+        return _selectedFormat switch
+        {
+            ModelFormat.Ifc => "IFC",
+            ModelFormat.IfcZip => "IFC-ZIP",
+            _ => "wexBIM"
+        };
+    }
+    
+    private string GetLoadingMessage()
+    {
+        return _selectedFormat switch
+        {
+            ModelFormat.Ifc or ModelFormat.IfcZip => "Processing IFC file...",
+            _ => "Loading model..."
+        };
+    }
+    
+    /// <summary>
+    /// Sets the loading state and message (can be called from parent)
+    /// </summary>
+    public void SetLoading(bool loading, string? message = null)
+    {
+        IsLoading = loading;
+        ProcessingMessage = message;
+        StateHasChanged();
+    }
+    
+    /// <summary>
+    /// Updates the progress (can be called from parent)
+    /// </summary>
+    public void SetProgress(int percent, string? message = null)
+    {
+        _loadingProgress = percent;
+        if (message != null)
+        {
+            ProcessingMessage = message;
+        }
+        StateHasChanged();
+    }
 
     private async Task HandleFileSelected(InputFileChangeEventArgs e)
     {
@@ -226,7 +331,16 @@
 
         _selectedFileName = file.Name;
         _selectedFileSize = FormatFileSize(file.Size);
+        _selectedFormat = FileLoadedEventArgs.GetFormatFromFileName(file.Name);
         _errorMessage = null;
+
+        // Validate IFC files are allowed
+        if (!AllowIfcFiles && (_selectedFormat == ModelFormat.Ifc || _selectedFormat == ModelFormat.IfcZip))
+        {
+            _errorMessage = "IFC files are not supported in this context. Please use a wexBIM file.";
+            await OnError.InvokeAsync(_errorMessage);
+            return;
+        }
 
         try
         {
@@ -234,8 +348,9 @@
             _loadingProgress = 0;
             StateHasChanged();
 
-            // Read file into byte array
-            await using var stream = file.OpenReadStream(file.Size);
+            // Read file into byte array (allow large files up to 500MB for IFC)
+            var maxSize = _selectedFormat == ModelFormat.Wexbim ? file.Size : Math.Max(file.Size, 500 * 1024 * 1024);
+            await using var stream = file.OpenReadStream(maxSize);
             using var memoryStream = new MemoryStream();
             
             var buffer = new byte[81920];
@@ -255,7 +370,8 @@
             {
                 FileData = memoryStream.ToArray(),
                 FileName = file.Name,
-                FileSize = file.Size
+                FileSize = file.Size,
+                Format = _selectedFormat
             });
         }
         catch (Exception ex)

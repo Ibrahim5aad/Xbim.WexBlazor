@@ -19,5 +19,25 @@ public class FileLoadedEventArgs
     /// File size in bytes
     /// </summary>
     public long FileSize { get; set; }
+    
+    /// <summary>
+    /// Format of the file
+    /// </summary>
+    public ModelFormat Format { get; set; } = ModelFormat.Wexbim;
+    
+    /// <summary>
+    /// Determines the format from the file extension
+    /// </summary>
+    public static ModelFormat GetFormatFromFileName(string fileName)
+    {
+        var ext = Path.GetExtension(fileName).ToLowerInvariant();
+        return ext switch
+        {
+            ".ifc" => ModelFormat.Ifc,
+            ".ifczip" => ModelFormat.IfcZip,
+            ".wexbim" => ModelFormat.Wexbim,
+            _ => ModelFormat.Wexbim
+        };
+    }
 }
 

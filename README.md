@@ -243,9 +243,84 @@ dictSource.AddProperty(elementId: 123, modelId: 0,
 propertyService.RegisterSource(dictSource);
 ```
 
+## Loading IFC Files Directly
+
+The library supports loading IFC files directly and automatically converting them to wexBIM format for visualization. This functionality uses the [xBIM Geometry Engine v6](https://github.com/xBimTeam/XbimGeometry/tree/feature/netcore) and **only works in server-side scenarios** (Blazor Server or ASP.NET Core API).
+
+### Setting Up IFC Loading (Blazor Server)
+
+```csharp
+// In Program.cs
+builder.Services.AddSingleton<IfcModelService>();
+builder.Services.AddSingleton<PropertyService>();
+```
+
+### Processing IFC Files
+
+```csharp
+@inject IfcModelService IfcService
+@inject PropertyService PropertyService
+
+@code {
+    private async Task LoadIfcFile(byte[] ifcData, string fileName)
+    {
+        // Process the IFC file - generates wexbim and keeps IModel for properties
+        var result = await IfcService.ProcessIfcBytesAsync(
+            ifcData, 
+            fileName,
+            new Progress<IfcProcessingProgress>(p => 
+            {
+                Console.WriteLine($"{p.Stage}: {p.Message} ({p.PercentComplete}%)");
+            }));
+        
+        if (result.Success && result.WexbimData != null)
+        {
+            // Load the generated wexbim into the viewer
+            var loadedModel = await Viewer.LoadModelFromBytesAsync(
+                result.WexbimData, 
+                fileName);
+            
+            if (loadedModel != null && result.Model != null)
+            {
+                // Store the IFC model reference for property access
+                loadedModel.IfcModel = result.Model;
+                loadedModel.OriginalFormat = ModelFormat.Ifc;
+                
+                // Register property source for this model
+                var propertySource = new IfcPropertySource(result.Model, loadedModel.Id);
+                PropertyService.RegisterSource(propertySource);
+            }
+        }
+    }
+}
+```
+
+### FileLoaderPanel with IFC Support
+
+The `FileLoaderPanel` component automatically supports IFC files when `AllowIfcFiles="true"`:
+
+```razor
+<FileLoaderPanel 
+    IsVisible="true"
+    AllowIfcFiles="true"
+    OnFileLoaded="HandleFileLoaded" />
+```
+
+The panel will:
+- Accept `.ifc`, `.ifczip`, and `.wexbim` files
+- Show appropriate icons and badges for each format
+- Display a note when IFC files will be processed
+
+### Important Notes
+
+- **Server-Side Only**: IFC processing requires native code (xBIM Geometry Engine) that cannot run in WebAssembly browsers
+- **For Blazor WebAssembly**: Create a server-side API endpoint to process IFC files and return wexbim data
+- **Memory Usage**: Large IFC files may require significant memory during processing
+- **Processing Time**: Complex models can take several seconds to process
+
 ## wexBIM Format
 
-The viewer requires 3D models in the wexBIM format. You can convert IFC models to wexBIM using tools from the [XbimEssentials](https://github.com/xBimTeam/XbimEssentials) library.
+The viewer requires 3D models in the wexBIM format. You can convert IFC models to wexBIM using tools from the [XbimEssentials](https://github.com/xBimTeam/XbimEssentials) library, or use the built-in `IfcModelService` (server-side only).
 
 ## Development
 
