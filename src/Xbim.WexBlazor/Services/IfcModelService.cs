@@ -340,11 +340,6 @@ public class IfcModelService : IDisposable
         {
             try
             {
-                using var memoryStream = new MemoryStream();
-                
-                // Create the 3D model context for geometry processing
-                var context = new Xbim3DModelContext(model);
-                
                 progress?.Report(new IfcProcessingProgress
                 {
                     Stage = "Geometry",
@@ -352,7 +347,11 @@ public class IfcModelService : IDisposable
                     Message = "Creating geometry context..."
                 });
                 
+                // Create the 3D model context for geometry processing
+                var context = new Xbim3DModelContext(model);
+                
                 // Process the geometry (this uses the xBIM geometry engine)
+                // This generates the tessellated geometry for all products
                 context.CreateContext(null, true);
                 
                 if (cancellationToken.IsCancellationRequested)
@@ -365,12 +364,16 @@ public class IfcModelService : IDisposable
                     Message = "Generating wexbim..."
                 });
                 
-                // Write to wexbim format using the extension method
-                using (var wexBimBinaryWriter = new BinaryWriter(memoryStream))
-                {
-                    // Write the wexbim file
-                    model.SaveAsWexBim(wexBimBinaryWriter);
-                }
+                // Get all products from the model that have geometry
+                var products = model.Instances.OfType<Xbim.Ifc4.Interfaces.IIfcProduct>();
+                
+                // Write to wexbim format
+                using var memoryStream = new MemoryStream();
+                using var wexBimBinaryWriter = new BinaryWriter(memoryStream);
+                
+                // Save as wexbim - the geometry context has already processed the geometry
+                // Pass the products, and SaveAsWexBim will use the processed geometry
+                model.SaveAsWexBim(wexBimBinaryWriter, products);
                 
                 progress?.Report(new IfcProcessingProgress
                 {
@@ -383,7 +386,7 @@ public class IfcModelService : IDisposable
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Error generating wexbim geometry");
+                _logger?.LogError(ex, "Error generating wexbim geometry: {Message}", ex.Message);
                 return null;
             }
         }, cancellationToken);

@@ -1,10 +1,27 @@
 @using Xbim.WexBlazor.Models
 @using Xbim.WexBlazor.Services
+@using Microsoft.JSInterop
 @namespace Xbim.WexBlazor.Components
+@implements IAsyncDisposable
+@inject IJSRuntime JSRuntime
 
-<div class="properties-panel @CssClass @(IsVisible ? "visible" : "") @PositionClass @(IsMinimized ? "minimized" : "")">
+@* Toggle button positioned at the panel location *@
+@if (!IsVisible)
+{
+    <button class="properties-toggle-button @PositionClass" 
+            @onclick="ToggleVisibility"
+            title="Show Properties">
+        <i class="bi bi-info-circle"></i>
+    </button>
+}
+
+<div id="@_panelId" class="properties-panel @CssClass @(IsVisible ? "visible" : "") @PositionClass @(IsMinimized ? "minimized" : "")">
     <div class="properties-header">
         <h6 class="properties-title">
+            @if (AllowDrag)
+            {
+                <i class="bi bi-arrows-move drag-handle-icon" title="Drag to move"></i>
+            }
             <i class="bi bi-info-circle"></i> Properties
         </h6>
         <div class="header-actions">
@@ -168,7 +185,28 @@
     [Parameter]
     public EventCallback OnClose { get; set; }
     
+    /// <summary>
+    /// Whether the panel can be dragged
+    /// </summary>
+    [Parameter]
+    public bool AllowDrag { get; set; } = true;
+    
+    /// <summary>
+    /// Event raised when visibility changes
+    /// </summary>
+    [Parameter]
+    public EventCallback<bool> OnVisibilityChanged { get; set; }
+    
     private bool IsMinimized { get; set; } = false;
+    private string _panelId = $"properties-panel-{Guid.NewGuid():N}";
+    private IJSObjectReference? _jsModule;
+    private IJSObjectReference? _dragInstance;
+    
+    private async Task ToggleVisibility()
+    {
+        IsVisible = !IsVisible;
+        await OnVisibilityChanged.InvokeAsync(IsVisible);
+    }
     
     private string PositionClass => Position switch
     {
@@ -223,16 +261,59 @@
     /// <summary>
     /// Shows the panel
     /// </summary>
-    public void Show() => IsVisible = true;
+    public async Task Show()
+    {
+        IsVisible = true;
+        await OnVisibilityChanged.InvokeAsync(true);
+    }
     
     /// <summary>
     /// Hides the panel
     /// </summary>
-    public void Hide() => IsVisible = false;
+    public async Task Hide()
+    {
+        IsVisible = false;
+        await OnVisibilityChanged.InvokeAsync(false);
+    }
     
     /// <summary>
     /// Toggles panel visibility
     /// </summary>
-    public void Toggle() => IsVisible = !IsVisible;
+    public async Task Toggle() => await ToggleVisibility();
+    
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (AllowDrag && IsVisible)
+        {
+            try
+            {
+                if (_jsModule == null)
+                {
+                    _jsModule = await JSRuntime.InvokeAsync<IJSObjectReference>(
+                        "import", "./_content/Xbim.WexBlazor/js/propertiesPanelDrag.js");
+                }
+                
+                // Initialize or re-initialize drag if needed
+                await _jsModule.InvokeVoidAsync("initializeDrag", _panelId);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error initializing drag: {ex.Message}");
+            }
+        }
+    }
+    
+    public async ValueTask DisposeAsync()
+    {
+        if (_jsModule != null)
+        {
+            try
+            {
+                await _jsModule.InvokeVoidAsync("disposeDrag", _panelId);
+                await _jsModule.DisposeAsync();
+            }
+            catch { }
+        }
+    }
 }
 

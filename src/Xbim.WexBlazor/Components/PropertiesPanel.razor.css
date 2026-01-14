@@ -11,9 +11,23 @@
     max-width: 400px;
     opacity: 0;
     pointer-events: none;
-    transition: opacity 0.2s ease, transform 0.2s ease;
+    transition: opacity 0.2s ease;
     z-index: 100;
     overflow: hidden;
+}
+
+.properties-panel.position-dragged {
+    /* When dragged, position is controlled by transform */
+    left: 0 !important;
+    right: auto !important;
+    top: 0 !important;
+    bottom: auto !important;
+}
+
+.properties-panel.dragging {
+    transition: none;
+    z-index: 1000;
+    box-shadow: var(--xbim-shadow-xl);
 }
 
 .properties-panel.visible {
@@ -28,23 +42,74 @@
 /* Position variants */
 .properties-panel.position-left {
     left: 16px;
-    top: 80px;
+    top: 16px;
 }
 
 .properties-panel.position-right {
     right: 16px;
-    top: 80px;
+    top: 16px;
 }
 
 .properties-panel.position-bottom-left {
     left: 16px;
-    bottom: 80px;
+    bottom: 16px;
     top: auto;
 }
 
 .properties-panel.position-bottom-right {
     right: 16px;
-    bottom: 80px;
+    bottom: 16px;
+    top: auto;
+}
+
+/* Toggle button positioned at panel location */
+.properties-toggle-button {
+    position: absolute;
+    z-index: 99;
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    border: 1px solid var(--xbim-border-primary);
+    background: var(--xbim-bg-secondary);
+    color: var(--xbim-text-primary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    box-shadow: var(--xbim-shadow-md);
+}
+
+.properties-toggle-button:hover {
+    background: var(--xbim-bg-hover);
+    border-color: var(--xbim-accent-primary);
+    color: var(--xbim-accent-primary);
+    transform: scale(1.05);
+}
+
+.properties-toggle-button i {
+    font-size: 1.2rem;
+}
+
+.properties-toggle-button.position-left {
+    left: 16px;
+    top: 16px;
+}
+
+.properties-toggle-button.position-right {
+    right: 16px;
+    top: 16px;
+}
+
+.properties-toggle-button.position-bottom-left {
+    left: 16px;
+    bottom: 16px;
+    top: auto;
+}
+
+.properties-toggle-button.position-bottom-right {
+    right: 16px;
+    bottom: 16px;
     top: auto;
 }
 
@@ -57,6 +122,15 @@
     border-bottom: 1px solid var(--xbim-border-primary);
     background: var(--xbim-bg-tertiary);
     flex-shrink: 0;
+    user-select: none;
+}
+
+.properties-header.draggable-header {
+    cursor: move;
+}
+
+.properties-header.draggable-header:hover {
+    background: var(--xbim-bg-hover);
 }
 
 .properties-title {
@@ -67,6 +141,16 @@
     display: flex;
     align-items: center;
     gap: 6px;
+}
+
+.drag-handle-icon {
+    opacity: 0.5;
+    cursor: move;
+    font-size: 0.8rem;
+}
+
+.drag-handle-icon:hover {
+    opacity: 1;
 }
 
 .properties-title i {

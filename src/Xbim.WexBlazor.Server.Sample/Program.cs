@@ -26,6 +26,10 @@ themeService.SetSelectionAndHoverColors(
 );
 builder.Services.AddSingleton(themeService);
 
+// Register IFC processing services (server-side only)
+builder.Services.AddSingleton<IfcModelService>();
+builder.Services.AddSingleton<PropertyService>();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
