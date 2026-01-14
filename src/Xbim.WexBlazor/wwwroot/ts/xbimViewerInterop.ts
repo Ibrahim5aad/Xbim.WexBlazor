@@ -278,6 +278,25 @@ export async function zoomFit(viewerId: string): Promise<boolean> {
     }
 }
 
+// Zoom to fit a specific model
+export async function zoomToModel(viewerId: string, modelId: number): Promise<boolean> {
+    try {
+        const viewer = viewerInstances.get(viewerId);
+        if (!viewer) {
+            console.error(`Viewer with id ${viewerId} not found`);
+            return false;
+        }
+        
+        // Zoom to the specific model with animation
+        await viewer.zoomTo(undefined, modelId, true);
+        console.log(`Zoomed to model ${modelId}`);
+        return true;
+    } catch (error) {
+        console.error(`Error zooming to model ${modelId}:`, error);
+        return false;
+    }
+}
+
 // Reset the viewer to its initial state
 export async function reset(viewerId: string): Promise<boolean> {
     try {
