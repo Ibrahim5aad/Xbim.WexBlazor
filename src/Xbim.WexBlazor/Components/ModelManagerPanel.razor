@@ -59,11 +59,6 @@
                             </div>
                             
                             <div class="model-actions">
-                                <button class="btn-model-action btn-zoom" 
-                                        @onclick="() => HandleZoomToModel(model)"
-                                        title="Zoom to model">
-                                    <i class="bi bi-zoom-in"></i>
-                                </button>
                                 <button class="btn-model-action @(model.IsStarted ? "btn-stop" : "btn-start")" 
                                         @onclick="() => HandleToggleVisibility(model)"
                                         title="@(model.IsStarted ? "Stop model" : "Start model")">
@@ -158,14 +153,6 @@
         if (OnAfterToggleVisibility.HasDelegate)
         {
             await OnAfterToggleVisibility.InvokeAsync(model);
-        }
-    }
-
-    private async Task HandleZoomToModel(LoadedModel model)
-    {
-        if (Viewer != null)
-        {
-            await Viewer.ZoomToModelAsync(model.Id);
         }
     }
 

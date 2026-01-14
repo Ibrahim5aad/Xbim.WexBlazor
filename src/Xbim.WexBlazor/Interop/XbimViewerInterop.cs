@@ -144,17 +144,6 @@ public class XbimViewerInterop : JsInteropBase
     }
 
     /// <summary>
-    /// Zooms to fit a specific model in the view
-    /// </summary>
-    /// <param name="viewerId">The viewer reference ID</param>
-    /// <param name="modelId">The model ID to zoom to</param>
-    /// <returns>True if successful</returns>
-    public async ValueTask<bool> ZoomToModelAsync(string viewerId, int modelId)
-    {
-        return await InvokeAsync<bool>("zoomToModel", viewerId, modelId);
-    }
-
-    /// <summary>
     /// Hides specific elements by their IDs
     /// </summary>
     /// <param name="viewerId">The viewer reference ID</param>

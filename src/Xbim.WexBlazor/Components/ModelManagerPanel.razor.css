@@ -270,15 +270,6 @@
     color: var(--xbim-text-primary);
 }
 
-.btn-model-action.btn-zoom {
-    color: var(--xbim-accent-primary);
-}
-
-.btn-model-action.btn-zoom:hover {
-    background: var(--xbim-accent-primary-bg);
-    color: var(--xbim-accent-primary);
-}
-
 .btn-model-remove:hover {
     background: var(--xbim-danger-bg);
     color: var(--xbim-danger);

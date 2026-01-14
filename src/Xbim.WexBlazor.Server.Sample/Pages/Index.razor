@@ -1,0 +1,443 @@
+﻿@page "/"
+@page "/xbim-viewer"
+@using Xbim.WexBlazor.Components
+@using Xbim.WexBlazor.Components.BuiltInButtons
+@using Xbim.WexBlazor.Interop
+@using Xbim.WexBlazor.Models
+@using Xbim.WexBlazor.Services
+@using Microsoft.AspNetCore.Components.Forms
+@implements IDisposable
+@inject IJSRuntime JSRuntime
+@inject ThemeService ThemeService
+
+<PageTitle>Xbim Viewer</PageTitle>
+
+
+<XbimViewerComponent @ref="_xbimViewer"
+                     Id="xbimViewer"
+                     Width="100%"
+                     Height="600"
+                     BackgroundColor="@GetViewerBackgroundColor()"
+                     ContainerStyle="width: 100%; height: 100%; position: relative;"
+                     OnViewerInitialized="HandleViewerInitialized"
+                     OnModelLoaded="HandleModelLoaded"
+                     OnLoaded="HandleLoaded"
+                     OnPick="HandlePick"
+                     OnHoverPick="HandleHoverPick"
+                     OnClick="HandleClick">
+
+        <FileLoaderPanel 
+                         IsVisible="@_showFileLoader"
+                         AllowClose="true"
+                         DemoModels="@_demoModels"
+                         OnFileLoaded="HandleFileDataLoaded"
+                         OnUrlLoaded="HandleUrlModelLoad"
+                         OnClose="HandleLoaderClose"
+                         OnError="HandleLoaderError" />
+
+        @if (_xbimViewer != null)
+        {
+            <ModelManagerPanel IsVisible="@_showModelManager"
+                               Viewer="@_xbimViewer"
+                               Models="@GetLoadedModelsList()"
+                               Position="ModelManagerPosition.TopRight"
+                               AllowClose="true"
+                               ShowActions="true"
+                               OnClose="HandleModelManagerClose"
+                               OnLoadModel="ShowFileLoader"
+                               OnAfterToggleVisibility="HandleAfterToggleModel"
+                               OnAfterUnload="HandleAfterUnloadModel"
+                               OnAfterUnloadAll="HandleAfterUnloadAllModels" />
+
+            <ViewerToolbar Items="@_toolbarItems"
+                           Position="@_toolbarPosition"
+                           Alignment="@_toolbarAlignment" />
+        }
+
+</XbimViewerComponent>
+
+@code {
+    private XbimViewerComponent? _xbimViewer;
+    private bool _showFileLoader = true;
+    private bool _showModelManager = true;
+    private List<SelectedElement> _selectedElements = new();
+    
+    // Plugin tracking
+    private bool _gridActive = false;
+    private bool _interactivePluginsInitialized = false;
+    private SectionBoxPlugin? _sectionBoxPlugin;
+    private GridPlugin? _gridPlugin;
+    private ClippingPlanePlugin? _clippingPlanePlugin;
+
+    private List<LoadedModel> GetLoadedModelsList()
+    {
+        return _xbimViewer?.GetLoadedModels().Values.ToList() ?? new List<LoadedModel>();
+    }
+    
+    private List<ToolbarItemBase> _toolbarItems = new();
+    private ToolbarPosition _toolbarPosition = ToolbarPosition.Bottom;
+    private ToolbarAlignment _toolbarAlignment = ToolbarAlignment.Center;
+    
+    private List<DemoModel> _demoModels = new()
+    {
+        new DemoModel
+        {
+            Name = "Four Walls",
+            Path = "models/FourWalls.wexbim",
+            Description = "A simple building model with four walls"
+        },
+        new DemoModel
+        {
+            Name = "Sample House",
+            Path = "models/SampleHouse.wexbim",
+            Description = "A sample house model"
+        }
+    };
+    
+    protected override void OnInitialized()
+    {
+        ThemeService.OnThemeChanged += ApplyTheme;
+        base.OnInitialized();
+    }
+    
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await ApplyThemeAsync();
+        }
+        await base.OnAfterRenderAsync(firstRender);
+    }
+    
+    private void ApplyTheme()
+    {
+        InvokeAsync(ApplyThemeAsync);
+    }
+    
+    private async Task ApplyThemeAsync()
+    {
+        var themeClass = ThemeService.GetThemeClass();
+        await JSRuntime.InvokeVoidAsync("eval", $"document.body.className = '{themeClass}';");
+        
+        await ApplyCustomAccentColorAsync();
+        
+        if (_xbimViewer != null)
+        {
+            await _xbimViewer.SetBackgroundColorAsync(GetViewerBackgroundColor());
+            await _xbimViewer.SetHighlightingColorAsync(ThemeService.EffectiveSelectionColor);
+            await _xbimViewer.SetHoverPickColorAsync(ThemeService.EffectiveHoverColor);
+            
+            if (_gridPlugin != null && _gridActive)
+            {
+                await _xbimViewer.RemovePluginAsync(_gridPlugin.Id);
+                _gridPlugin.Color = GetGridColor();
+                await _xbimViewer.AddPluginAsync(_gridPlugin);
+            }
+        }
+        
+        StateHasChanged();
+    }
+    
+    private async Task ApplyCustomAccentColorAsync()
+    {
+        var accentColor = ThemeService.CurrentAccentColor;
+        var hoverColor = LightenColor(accentColor, 0.15);
+        var bgColor = AddAlpha(accentColor, 0.2);
+        
+        var cssVars = $@"
+            document.body.style.setProperty('--xbim-accent-primary', '{accentColor}', 'important');
+            document.body.style.setProperty('--xbim-accent-primary-hover', '{hoverColor}', 'important');
+            document.body.style.setProperty('--xbim-accent-primary-bg', '{bgColor}', 'important');
+            document.body.style.setProperty('--xbim-border-hover', '{accentColor}', 'important');
+        ";
+        
+        await JSRuntime.InvokeVoidAsync("eval", cssVars);
+    }
+    
+    private string LightenColor(string hex, double amount)
+    {
+        hex = hex.TrimStart('#');
+        var r = Convert.ToInt32(hex.Substring(0, 2), 16);
+        var g = Convert.ToInt32(hex.Substring(2, 2), 16);
+        var b = Convert.ToInt32(hex.Substring(4, 2), 16);
+        
+        r = Math.Min(255, (int)(r + (255 - r) * amount));
+        g = Math.Min(255, (int)(g + (255 - g) * amount));
+        b = Math.Min(255, (int)(b + (255 - b) * amount));
+        
+        return $"#{r:X2}{g:X2}{b:X2}";
+    }
+    
+    private string AddAlpha(string hex, double alpha)
+    {
+        hex = hex.TrimStart('#');
+        var r = Convert.ToInt32(hex.Substring(0, 2), 16);
+        var g = Convert.ToInt32(hex.Substring(2, 2), 16);
+        var b = Convert.ToInt32(hex.Substring(4, 2), 16);
+        
+        return $"rgba({r}, {g}, {b}, {alpha})";
+    }
+    
+    private string GetViewerBackgroundColor()
+    {
+        return ThemeService.CurrentTheme == ViewerTheme.Dark ? "#404040" : "#ffffff";
+    }
+    
+    private double[] GetGridColor()
+    {
+        return ThemeService.CurrentTheme == ViewerTheme.Dark 
+            ? new[] { 1.0, 1.0, 1.0, 1.0 }  // White for dark theme
+            : new[] { 0.0, 0.0, 0.0, 1.0 };  // Black for light theme
+    }
+    
+    private async Task HandleViewerInitialized(string viewerId)
+    {
+        InitializeToolbar();
+        
+        // Set viewer colors
+        if (_xbimViewer != null)
+        {
+            await _xbimViewer.SetBackgroundColorAsync(GetViewerBackgroundColor());
+            await _xbimViewer.SetHighlightingColorAsync(ThemeService.EffectiveSelectionColor);
+            await _xbimViewer.SetHoverPickColorAsync(ThemeService.EffectiveHoverColor);
+        }
+        
+        var navigationCubePlugin = new NavigationCubePlugin()
+        {
+            Ratio = 0.02,
+            PassiveAlpha = 1,
+            ActiveAlpha = 1
+        };
+        await _xbimViewer!.AddPluginAsync(navigationCubePlugin);
+        
+        _gridPlugin = new GridPlugin
+        {
+            Factor = 1.5,
+            ZFactor = 20,
+            NumberOfLines = 20,
+            Color = GetGridColor()
+        };
+        await _xbimViewer!.AddPluginAsync(_gridPlugin);
+        _gridActive = true;
+        
+        await InvokeAsync(StateHasChanged);
+    }
+    
+    private void InitializeToolbar()
+    {
+        if (_xbimViewer == null) return;
+        
+        _toolbarItems = new List<ToolbarItemBase>
+        {
+            ViewerBuiltInButtons.CreatePerspectiveToggle(_xbimViewer, startWithPerspective: true),
+            ViewerBuiltInButtons.CreateZoomFitButton(_xbimViewer),
+            ViewerBuiltInButtons.CreateResetViewButton(_xbimViewer),
+            ViewerBuiltInButtons.CreateViewsDropdown(_xbimViewer),
+            ViewerBuiltInButtons.CreateNavigationButtons(_xbimViewer),
+            ViewerBuiltInButtons.CreateXRayToggle(_xbimViewer),
+            ViewerBuiltInButtons.CreateHideToggle(_xbimViewer, GetSelectedElementIds, StateHasChanged),
+            ViewerBuiltInButtons.CreateIsolateToggle(_xbimViewer, GetSelectedElementIds, StateHasChanged),
+            ViewerBuiltInButtons.CreateClearSelectionButton(_xbimViewer),
+            ViewerBuiltInButtons.CreateSectionBoxButtons(_xbimViewer, () => _sectionBoxPlugin, "Box", StateHasChanged),
+            ViewerBuiltInButtons.CreateClippingPlaneButtons(_xbimViewer, () => _clippingPlanePlugin, "Plane", StateHasChanged),
+            new ToolbarButton
+            {
+                Icon = "bi-moon-stars",
+                Tooltip = "Toggle Theme",
+                OnClick = EventCallback.Factory.Create(this, ToggleTheme)
+            }
+        };
+    }
+
+    private int[] GetSelectedElementIds()
+    {
+        return _selectedElements.Select(e => e.Id).ToArray();
+    }
+    
+    private async Task ToggleTheme()
+    {
+        ThemeService.ToggleTheme();
+        await Task.CompletedTask;
+    }
+    
+    private async Task HandleModelLoaded(bool success)
+    {
+        if (success)
+        {
+            // Initialize interactive plugins after first model load (they need geometry)
+            if (!_interactivePluginsInitialized && _xbimViewer != null)
+            {
+                _sectionBoxPlugin = new SectionBoxPlugin
+                {
+                    IsStopped = true
+                };
+                await _xbimViewer.AddPluginAsync(_sectionBoxPlugin);
+                
+                _clippingPlanePlugin = new ClippingPlanePlugin
+                {
+                    IsStopped = true
+                };
+                await _xbimViewer.AddPluginAsync(_clippingPlanePlugin);
+                
+                _interactivePluginsInitialized = true;
+            }
+            
+            await ZoomFit();
+        }
+        await InvokeAsync(StateHasChanged);
+    }
+    
+    private void ShowFileLoader()
+    {
+        _showFileLoader = true;
+        StateHasChanged();
+    }
+
+    private void HandleLoaderClose()
+    {
+        _showFileLoader = false;
+        StateHasChanged();
+    }
+
+    private async Task HandleFileDataLoaded(FileLoadedEventArgs args)
+    {
+        if (_xbimViewer == null) return;
+
+        try
+        {
+            var loadedModel = await _xbimViewer.LoadModelFromBytesAsync(args.FileData, args.FileName);
+            if (loadedModel != null)
+            {
+                loadedModel.SizeBytes = args.FileSize;
+                _showFileLoader = false;
+                StateHasChanged();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading file: {ex.Message}");
+        }
+    }
+
+    private async Task HandleUrlModelLoad(string url)
+    {
+        if (_xbimViewer == null) return;
+
+        try
+        {
+            var loadedModel = await _xbimViewer.LoadModelAsync(url);
+            if (loadedModel != null)
+            {
+                _showFileLoader = false;
+                StateHasChanged();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading from URL: {ex.Message}");
+        }
+    }
+
+    private void HandleLoaderError(string error)
+    {
+        Console.WriteLine($"Loader error: {error}");
+    }
+
+    // Model Manager handlers
+    private void HandleModelManagerClose()
+    {
+        _showModelManager = false;
+        StateHasChanged();
+    }
+
+    private async Task HandleAfterToggleModel(LoadedModel model)
+    {
+        await ZoomFit();
+        StateHasChanged();
+    }
+
+    private async Task HandleAfterUnloadModel(LoadedModel model)
+    {
+        await ZoomFit();
+        StateHasChanged();
+    }
+
+    private async Task HandleAfterUnloadAllModels()
+    {
+        await ZoomFit();
+        StateHasChanged();
+    }
+    
+    private async Task ZoomFit()
+    {
+        if (_xbimViewer != null)
+        {
+            await _xbimViewer.ZoomFitAsync();
+        }
+    }
+    
+    private async Task Reset()
+    {
+        if (_xbimViewer != null)
+        {
+            await _xbimViewer.ResetAsync();
+        }
+    }
+    
+    private async Task GetSelection()
+    {
+        if (_xbimViewer != null)
+        {
+            var selected = await _xbimViewer.GetSelectedElementsAsync();
+            _selectedElements = selected.ToList();
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+    
+    private async Task HandlePick(ViewerEventArgs e)
+    {
+        if (e.Id.HasValue && _xbimViewer != null)
+        {
+            var isHighlighted = await _xbimViewer.IsElementHighlightedAsync(e.Id.Value, e.Model);
+            
+            if (isHighlighted)
+            {
+                await _xbimViewer.UnhighlightElementsAsync(new[] { e.Id.Value }, e.Model);
+            }
+            else
+            {
+                await _xbimViewer.HighlightElementsAsync(new[] { e.Id.Value }, e.Model);
+            }
+            
+            await GetSelection();
+        }
+        
+        await InvokeAsync(StateHasChanged);
+    }
+    
+    private async Task HandleHoverPick(ViewerEventArgs e)
+    {
+        if (e.Id.HasValue)
+        {
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+    
+    private async Task HandleClick(ViewerEventArgs e)
+    {
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task HandleLoaded(ViewerEventArgs e)
+    {
+        if (_xbimViewer != null)
+        {
+            await _xbimViewer.ShowAsync(ViewerConstants.ViewType.Top);
+        }
+    }
+
+    public void Dispose()
+    {
+        ThemeService.OnThemeChanged -= ApplyTheme;
+    }
+}

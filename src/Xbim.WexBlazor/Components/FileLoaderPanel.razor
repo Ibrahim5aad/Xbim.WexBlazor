@@ -48,7 +48,6 @@
         {
             <div class="file-loader-tab-content">
                 <div class="mb-3">
-                    <label class="form-label">Or try a demo model:</label>
                     <div class="demo-models-list">
                         @foreach (var demoModel in DemoModels)
                         {
@@ -285,10 +284,23 @@
             StateHasChanged();
 
             // Construct full URL
-            var baseUrl = NavigationManager.BaseUri;
-            var fullUrl = modelPath.StartsWith("http://") || modelPath.StartsWith("https://") 
-                ? modelPath 
-                : $"{baseUrl.TrimEnd('/')}/{modelPath.TrimStart('/')}";
+            string fullUrl;
+            if (modelPath.StartsWith("http://") || modelPath.StartsWith("https://"))
+            {
+                fullUrl = modelPath;
+            }
+            else if (modelPath.StartsWith("~/"))
+            {
+                // Handle ~/ prefix (Blazor convention for wwwroot)
+                var path = modelPath.Substring(2); // Remove ~/
+                fullUrl = NavigationManager.ToAbsoluteUri(path).ToString();
+            }
+            else
+            {
+                // Regular relative path
+                var path = modelPath.TrimStart('/');
+                fullUrl = NavigationManager.ToAbsoluteUri(path).ToString();
+            }
 
             // Pass URL directly to the viewer
             await OnUrlLoaded.InvokeAsync(fullUrl);
