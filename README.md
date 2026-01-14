@@ -5,7 +5,7 @@
 [![Build Status](https://github.com/Ibrahim5aad/Xbim.WexBlazor/actions/workflows/publish-nuget.yml/badge.svg)](https://github.com/Ibrahim5aad/Xbim.WexBlazor/actions/workflows/publish-nuget.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-A Blazor component library that wraps the @xbim/viewer JavaScript library for use in Blazor applications. This library allows you to display 3D building models in the wexBIM format.
+A Blazor component library that wraps the @xbim/viewer JavaScript library for use in Blazor applications. This library allows you to display 3D building models in the wexBIM format. **Blazor Server applications can also load IFC files directly**, which are automatically converted to wexBIM format for visualization.
 
 ![Xbim.WexBlazor in action](screenshot.png)
 
@@ -17,7 +17,8 @@ A Blazor component library that wraps the @xbim/viewer JavaScript library for us
   - **wwwroot/js/**: JavaScript interop modules
   - **wwwroot/lib/**: Third-party libraries (xBIM Viewer)
 
-- **Xbim.WexBlazor.Sample**: Sample application showcasing the library
+- **Xbim.WexBlazor.Sample**: WebAssembly sample application showcasing the library
+- **Xbim.WexBlazor.Server.Sample**: Blazor Server sample application with IFC file loading support
 
 ## Features
 
@@ -25,6 +26,9 @@ A Blazor component library that wraps the @xbim/viewer JavaScript library for us
 - Structured approach to wrapping JavaScript libraries
 - xBIM Viewer component for displaying wexBIM 3D models
 - Controls for loading models, zooming, and manipulating the view
+- **Direct IFC file loading in Blazor Server applications** - automatically converts IFC files to wexBIM format
+- Extensible properties system for displaying element properties from multiple sources
+- Theme support (light/dark) with customizable accent colors
 
 ## Installation
 
@@ -245,7 +249,15 @@ propertyService.RegisterSource(dictSource);
 
 ## Loading IFC Files Directly
 
-The library supports loading IFC files directly and automatically converting them to wexBIM format for visualization. This functionality uses the [xBIM Geometry Engine v6](https://github.com/xBimTeam/XbimGeometry/tree/feature/netcore) and **only works in server-side scenarios** (Blazor Server or ASP.NET Core API).
+**⚠️ Important: IFC file loading is only available in Blazor Server applications**, not in Blazor WebAssembly.
+
+The library supports loading IFC files directly and automatically converting them to wexBIM format for visualization. This functionality uses the [xBIM Geometry Engine v6](https://github.com/xBimTeam/XbimGeometry/tree/feature/netcore) and requires server-side execution (Blazor Server or ASP.NET Core API).
+
+### Why Server-Side Only?
+
+IFC processing requires native code from the xBIM Geometry Engine, which cannot run in WebAssembly browsers. For Blazor WebAssembly applications, you'll need to:
+- Pre-convert IFC files to wexBIM format, or
+- Create a server-side API endpoint to process IFC files and return wexbim data
 
 ### Setting Up IFC Loading (Blazor Server)
 
@@ -313,10 +325,11 @@ The panel will:
 
 ### Important Notes
 
-- **Server-Side Only**: IFC processing requires native code (xBIM Geometry Engine) that cannot run in WebAssembly browsers
-- **For Blazor WebAssembly**: Create a server-side API endpoint to process IFC files and return wexbim data
+- **✅ Blazor Server**: Full IFC support - can load and process IFC files directly
+- **❌ Blazor WebAssembly**: IFC processing not supported - must use pre-converted wexBIM files or a server API
 - **Memory Usage**: Large IFC files may require significant memory during processing
 - **Processing Time**: Complex models can take several seconds to process
+- **Properties**: When loading IFC files, properties are automatically extracted and available in the properties panel
 
 ## wexBIM Format
 
