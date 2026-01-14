@@ -1,6 +1,8 @@
 @using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.AspNetCore.Components
 @using Xbim.WexBlazor.Models
 @namespace Xbim.WexBlazor.Components
+@inject NavigationManager NavigationManager
 
 <div class="file-loader-panel @CssClass @(IsVisible ? "visible" : "")">
     <div class="file-loader-header">
@@ -16,6 +18,16 @@
 
     <div class="file-loader-body">
         <ul class="nav nav-tabs mb-3" role="tablist">
+            @if (DemoModels != null && DemoModels.Any())
+            {
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link @(_activeTab == "demo" ? "active" : "")" 
+                            @onclick='() => _activeTab = "demo"' 
+                            type="button">
+                        <i class="bi bi-collection"></i> Demo Models
+                    </button>
+                </li>
+            }
             <li class="nav-item" role="presentation">
                 <button class="nav-link @(_activeTab == "local" ? "active" : "")" 
                         @onclick='() => _activeTab = "local"' 
@@ -32,7 +44,38 @@
             </li>
         </ul>
 
-        @if (_activeTab == "local")
+        @if (_activeTab == "demo" && DemoModels != null && DemoModels.Any())
+        {
+            <div class="file-loader-tab-content">
+                <div class="mb-3">
+                    <label class="form-label">Or try a demo model:</label>
+                    <div class="demo-models-list">
+                        @foreach (var demoModel in DemoModels)
+                        {
+                            <button type="button" 
+                                    class="demo-model-item @(IsLoading && _loadingModelPath == demoModel.Path ? "loading" : "")" 
+                                    @onclick='() => HandleDemoModelLoad(demoModel.Path)'
+                                    disabled="@IsLoading">
+                                <div class="demo-model-icon">
+                                    <i class="bi bi-house-door"></i>
+                                </div>
+                                <div class="demo-model-info">
+                                    <div class="demo-model-name">@demoModel.Name</div>
+                                    @if (!string.IsNullOrEmpty(demoModel.Description))
+                                    {
+                                        <div class="demo-model-description">@demoModel.Description</div>
+                                    }
+                                </div>
+                                <div class="demo-model-action">
+                                    <i class="bi bi-arrow-right-circle"></i>
+                                </div>
+                            </button>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+        else if (_activeTab == "local")
         {
             <div class="file-loader-tab-content">
                 <div class="mb-3">
@@ -154,7 +197,20 @@
     [Parameter]
     public EventCallback<string> OnError { get; set; }
 
+    [Parameter]
+    public List<DemoModel>? DemoModels { get; set; }
+
     private string _activeTab = "local";
+    
+    protected override void OnParametersSet()
+    {
+        // Set default tab to "demo" if demo models are available
+        if (DemoModels != null && DemoModels.Any() && _activeTab == "local")
+        {
+            _activeTab = "demo";
+        }
+        base.OnParametersSet();
+    }
     private string? _selectedFileName;
     private string? _selectedFileSize;
     private string? _modelUrl;
@@ -162,6 +218,7 @@
     private string? _errorMessage;
     private int _loadingProgress;
     private bool IsLoading;
+    private string? _loadingModelPath;
 
     private async Task HandleFileSelected(InputFileChangeEventArgs e)
     {
@@ -211,6 +268,40 @@
         {
             IsLoading = false;
             _loadingProgress = 0;
+            StateHasChanged();
+        }
+    }
+
+    private async Task HandleDemoModelLoad(string modelPath)
+    {
+        if (string.IsNullOrWhiteSpace(modelPath)) return;
+
+        _errorMessage = null;
+
+        try
+        {
+            IsLoading = true;
+            _loadingModelPath = modelPath;
+            StateHasChanged();
+
+            // Construct full URL
+            var baseUrl = NavigationManager.BaseUri;
+            var fullUrl = modelPath.StartsWith("http://") || modelPath.StartsWith("https://") 
+                ? modelPath 
+                : $"{baseUrl.TrimEnd('/')}/{modelPath.TrimStart('/')}";
+
+            // Pass URL directly to the viewer
+            await OnUrlLoaded.InvokeAsync(fullUrl);
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = $"Error loading demo model: {ex.Message}";
+            await OnError.InvokeAsync(_errorMessage);
+        }
+        finally
+        {
+            IsLoading = false;
+            _loadingModelPath = null;
             StateHasChanged();
         }
     }

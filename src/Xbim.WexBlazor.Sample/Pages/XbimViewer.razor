@@ -29,6 +29,7 @@
         <FileLoaderPanel 
                          IsVisible="@_showFileLoader"
                          AllowClose="true"
+                         DemoModels="@_demoModels"
                          OnFileLoaded="HandleFileDataLoaded"
                          OnUrlLoaded="HandleUrlModelLoad"
                          OnClose="HandleLoaderClose"
@@ -77,6 +78,22 @@
     private ToolbarPosition _toolbarPosition = ToolbarPosition.Bottom;
     private ToolbarAlignment _toolbarAlignment = ToolbarAlignment.Center;
     
+    private List<DemoModel> _demoModels = new()
+    {
+        new DemoModel
+        {
+            Name = "Four Walls",
+            Path = "models/FourWalls.wexbim",
+            Description = "A simple building model with four walls"
+        },
+        new DemoModel
+        {
+            Name = "Sample House",
+            Path = "models/SampleHouse.wexbim",
+            Description = "A sample house model"
+        }
+    };
+    
     protected override void OnInitialized()
     {
         ThemeService.OnThemeChanged += ApplyTheme;
@@ -107,6 +124,8 @@
         if (_xbimViewer != null)
         {
             await _xbimViewer.SetBackgroundColorAsync(GetViewerBackgroundColor());
+            await _xbimViewer.SetHighlightingColorAsync(ThemeService.EffectiveSelectionColor);
+            await _xbimViewer.SetHoverPickColorAsync(ThemeService.EffectiveHoverColor);
             
             if (_gridPlugin != null && _gridActive)
             {
@@ -174,6 +193,14 @@
     private async Task HandleViewerInitialized(string viewerId)
     {
         InitializeToolbar();
+        
+        // Set viewer colors
+        if (_xbimViewer != null)
+        {
+            await _xbimViewer.SetBackgroundColorAsync(GetViewerBackgroundColor());
+            await _xbimViewer.SetHighlightingColorAsync(ThemeService.EffectiveSelectionColor);
+            await _xbimViewer.SetHoverPickColorAsync(ThemeService.EffectiveHoverColor);
+        }
         
         var navigationCubePlugin = new NavigationCubePlugin()
         {

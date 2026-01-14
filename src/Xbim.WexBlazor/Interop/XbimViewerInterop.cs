@@ -63,6 +63,32 @@ public class XbimViewerInterop : JsInteropBase
     }
 
     /// <summary>
+    /// Sets the highlighting (selection) color
+    /// </summary>
+    /// <param name="viewerId">The viewer reference ID</param>
+    /// <param name="color">CSS color string in hex format (e.g. "#FF0000" for red)</param>
+    /// <returns>True if successful</returns>
+    public async ValueTask<bool> SetHighlightingColorAsync(string viewerId, string color)
+    {
+        // Convert hex color to RGBA array
+        int[] rgba = HexToRgba(color);
+        return await InvokeAsync<bool>("setHighlightingColor", viewerId, rgba);
+    }
+
+    /// <summary>
+    /// Sets the hover pick color
+    /// </summary>
+    /// <param name="viewerId">The viewer reference ID</param>
+    /// <param name="color">CSS color string in hex format (e.g. "#FF0000" for red)</param>
+    /// <returns>True if successful</returns>
+    public async ValueTask<bool> SetHoverPickColorAsync(string viewerId, string color)
+    {
+        // Convert hex color to RGBA array
+        int[] rgba = HexToRgba(color);
+        return await InvokeAsync<bool>("setHoverPickColor", viewerId, rgba);
+    }
+
+    /// <summary>
     /// Converts a hex color string to an RGBA integer array
     /// </summary>
     /// <param name="hex">Hex color string (e.g. "#FF0000" or "#FF0000FF")</param>

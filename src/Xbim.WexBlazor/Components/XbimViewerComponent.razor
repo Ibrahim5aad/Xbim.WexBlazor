@@ -516,6 +516,36 @@
     }
 
     /// <summary>
+    /// Sets the highlighting (selection) color of the viewer
+    /// </summary>
+    /// <param name="color">CSS color string in hex format (e.g. "#FF0000" for red)</param>
+    /// <returns>True if successful</returns>
+    public async Task<bool> SetHighlightingColorAsync(string color)
+    {
+        if (_xbimViewer != null && !string.IsNullOrEmpty(_viewerId) && _viewerInitialized)
+        {
+            return await _xbimViewer.SetHighlightingColorAsync(_viewerId, color);
+        }
+        
+        return false;
+    }
+
+    /// <summary>
+    /// Sets the hover pick color of the viewer
+    /// </summary>
+    /// <param name="color">CSS color string in hex format (e.g. "#FF0000" for red)</param>
+    /// <returns>True if successful</returns>
+    public async Task<bool> SetHoverPickColorAsync(string color)
+    {
+        if (_xbimViewer != null && !string.IsNullOrEmpty(_viewerId) && _viewerInitialized)
+        {
+            return await _xbimViewer.SetHoverPickColorAsync(_viewerId, color);
+        }
+        
+        return false;
+    }
+
+    /// <summary>
     /// Zooms to fit all elements in the view
     /// </summary>
     public async Task<bool> ZoomFitAsync()

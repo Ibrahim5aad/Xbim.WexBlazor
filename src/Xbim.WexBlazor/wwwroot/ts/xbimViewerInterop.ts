@@ -223,6 +223,42 @@ export function setBackgroundColor(viewerId: string, rgba: number[]): boolean {
     }
 }
 
+// Set highlighting (selection) color
+export function setHighlightingColor(viewerId: string, rgba: number[]): boolean {
+    try {
+        const viewer = viewerInstances.get(viewerId);
+        if (!viewer) {
+            console.error(`Viewer with id ${viewerId} not found`);
+            return false;
+        }
+        
+        // Set highlighting color using rgba array
+        viewer.highlightingColour = rgba;
+        return true;
+    } catch (error) {
+        console.error('Error setting highlighting color:', error);
+        return false;
+    }
+}
+
+// Set hover pick color
+export function setHoverPickColor(viewerId: string, rgba: number[]): boolean {
+    try {
+        const viewer = viewerInstances.get(viewerId);
+        if (!viewer) {
+            console.error(`Viewer with id ${viewerId} not found`);
+            return false;
+        }
+        
+        // Set hover pick color using rgba array
+        viewer.hoverPickColour = rgba;
+        return true;
+    } catch (error) {
+        console.error('Error setting hover pick color:', error);
+        return false;
+    }
+}
+
 // Zoom to fit all elements in the view
 export async function zoomFit(viewerId: string): Promise<boolean> {
     try {
