@@ -136,6 +136,113 @@ The accent color is used for:
 - Button group labels
 - Focus indicators
 
+### Customizing Selection and Hover Colors
+
+You can customize the colors used when elements are selected or hovered:
+
+```csharp
+ThemeService.SetSelectionAndHoverColors(
+    selectionColor: "#ff6b6b",  // Red for selection
+    hoverColor: "#4da3ff"        // Blue for hover
+);
+```
+
+## Element Properties
+
+The library provides a flexible properties system that allows displaying element properties from various sources.
+
+### Property Sources
+
+Property sources provide element properties from different data sources:
+
+1. **IfcPropertySource**: Reads properties directly from IFC models using xBIM Essentials
+2. **DictionaryPropertySource**: Stores properties in memory (great for demos or caching)
+3. **CustomPropertySource**: Integrates with any custom data source (databases, APIs, etc.)
+
+### Setting Up IFC Property Source
+
+To read properties from IFC files, you need to load the IFC model using xBIM Essentials:
+
+```csharp
+using Xbim.Ifc;
+using Xbim.WexBlazor.Services;
+
+// Load IFC model
+var model = IfcStore.Open("path/to/model.ifc");
+
+// Create property source (viewerModelId is the ID returned when loading the wexbim file)
+var propertySource = new IfcPropertySource(model, viewerModelId);
+
+// Register with the property service
+propertyService.RegisterSource(propertySource);
+```
+
+### Using the Properties Panel
+
+Add the `PropertiesPanel` component to display properties:
+
+```razor
+<PropertiesPanel 
+    IsVisible="@_showProperties"
+    Properties="@_currentProperties"
+    IsLoading="@_isLoadingProperties"
+    Position="PropertiesPanelPosition.Right" />
+```
+
+### Custom Property Source Example
+
+Create a custom property source for integration with databases or APIs:
+
+```csharp
+var customSource = new CustomPropertySource(
+    propertyProvider: async (query, ct) =>
+    {
+        // Fetch properties from your database/API
+        var data = await myDatabase.GetElementPropertiesAsync(query.ElementId);
+        
+        return new ElementProperties
+        {
+            ElementId = query.ElementId,
+            ModelId = query.ModelId,
+            Name = data.Name,
+            Groups = new List<PropertyGroup>
+            {
+                new PropertyGroup
+                {
+                    Name = "Custom Properties",
+                    Source = "Database",
+                    Properties = data.Properties.Select(p => new PropertyValue
+                    {
+                        Name = p.Key,
+                        Value = p.Value
+                    }).ToList()
+                }
+            }
+        };
+    },
+    sourceType: "Database",
+    name: "My Database Properties"
+);
+
+propertyService.RegisterSource(customSource);
+```
+
+### In-Memory Properties (Dictionary Source)
+
+For simple use cases or demos:
+
+```csharp
+var dictSource = new DictionaryPropertySource(name: "Demo Properties");
+
+// Add properties for specific elements
+dictSource.AddProperty(elementId: 123, modelId: 0, 
+    groupName: "Custom", 
+    propertyName: "Status", 
+    value: "Approved");
+
+propertyService.RegisterSource(dictSource);
+```
+
 ## wexBIM Format
 
 The viewer requires 3D models in the wexBIM format. You can convert IFC models to wexBIM using tools from the [XbimEssentials](https://github.com/xBimTeam/XbimEssentials) library.

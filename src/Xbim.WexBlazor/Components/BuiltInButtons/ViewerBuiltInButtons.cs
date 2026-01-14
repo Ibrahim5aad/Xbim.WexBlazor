@@ -473,5 +473,23 @@ public static class ViewerBuiltInButtons
             }
         };
     }
+
+    /// <summary>
+    /// Creates a toggle button to show/hide the properties panel
+    /// </summary>
+    public static ToolbarToggleButton CreatePropertiesToggle(
+        Action<bool> onToggle,
+        bool initiallyVisible = true)
+    {
+        return new ToolbarToggleButton
+        {
+            Icon = "bi bi-info-circle",
+            ToggledIcon = "bi bi-info-circle-fill",
+            Tooltip = "Show Properties",
+            ToggledTooltip = "Hide Properties",
+            IsToggled = initiallyVisible,
+            OnToggle = EventCallback.Factory.Create<bool>(onToggle.Target ?? new object(), onToggle)
+        };
+    }
 }
 

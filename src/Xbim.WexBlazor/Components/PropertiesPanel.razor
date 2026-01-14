@@ -1,0 +1,238 @@
+@using Xbim.WexBlazor.Models
+@using Xbim.WexBlazor.Services
+@namespace Xbim.WexBlazor.Components
+
+<div class="properties-panel @CssClass @(IsVisible ? "visible" : "") @PositionClass @(IsMinimized ? "minimized" : "")">
+    <div class="properties-header">
+        <h6 class="properties-title">
+            <i class="bi bi-info-circle"></i> Properties
+        </h6>
+        <div class="header-actions">
+            @if (AllowMinimize)
+            {
+                <button class="btn-header-action" @onclick="ToggleMinimize" title="@(IsMinimized ? "Expand" : "Minimize")">
+                    <i class="bi bi-@(IsMinimized ? "arrows-angle-expand" : "dash")"></i>
+                </button>
+            }
+            @if (AllowClose)
+            {
+                <button class="btn-close-panel" @onclick="Close" title="Close">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            }
+        </div>
+    </div>
+    
+    @if (!IsMinimized)
+    {
+        <div class="properties-body">
+            @if (IsLoading)
+            {
+                <div class="properties-loading">
+                    <div class="spinner-border spinner-border-sm me-2" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <span>Loading properties...</span>
+                </div>
+            }
+            else if (Properties == null || !Properties.Groups.Any())
+            {
+                <div class="properties-empty">
+                    <i class="bi bi-cursor"></i>
+                    <p>@EmptyMessage</p>
+                </div>
+            }
+            else
+            {
+                <div class="properties-content">
+                    @if (!string.IsNullOrEmpty(Properties.Name) || !string.IsNullOrEmpty(Properties.TypeName))
+                    {
+                        <div class="element-header">
+                            @if (!string.IsNullOrEmpty(Properties.Name))
+                            {
+                                <div class="element-name" title="@Properties.Name">
+                                    @Properties.Name
+                                </div>
+                            }
+                            @if (!string.IsNullOrEmpty(Properties.TypeName))
+                            {
+                                <div class="element-type">
+                                    <span class="badge bg-secondary">@Properties.TypeName</span>
+                                </div>
+                            }
+                        </div>
+                    }
+                    
+                    <div class="property-groups">
+                        @foreach (var group in Properties.Groups)
+                        {
+                            <div class="property-group @(group.IsExpanded ? "expanded" : "collapsed")">
+                                <div class="property-group-header" @onclick="() => ToggleGroup(group)">
+                                    <i class="bi bi-chevron-@(group.IsExpanded ? "down" : "right")"></i>
+                                    <span class="group-name">@group.Name</span>
+                                    <span class="group-count">(@group.Properties.Count)</span>
+                                    @if (!string.IsNullOrEmpty(group.Source))
+                                    {
+                                        <span class="group-source">@group.Source</span>
+                                    }
+                                </div>
+                                
+                                @if (group.IsExpanded)
+                                {
+                                    <div class="property-list">
+                                        @foreach (var prop in group.Properties)
+                                        {
+                                            <div class="property-item">
+                                                <div class="property-name" title="@prop.Name">
+                                                    @prop.Name
+                                                </div>
+                                                <div class="property-value @GetValueTypeClass(prop.ValueType)" title="@GetFullValue(prop)">
+                                                    @if (string.IsNullOrEmpty(prop.Value))
+                                                    {
+                                                        <span class="value-empty">—</span>
+                                                    }
+                                                    else
+                                                    {
+                                                        @prop.Value
+                                                        @if (!string.IsNullOrEmpty(prop.Unit))
+                                                        {
+                                                            <span class="value-unit">@prop.Unit</span>
+                                                        }
+                                                    }
+                                                </div>
+                                            </div>
+                                        }
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    /// <summary>
+    /// Whether the panel is visible
+    /// </summary>
+    [Parameter]
+    public bool IsVisible { get; set; } = true;
+    
+    /// <summary>
+    /// The properties to display
+    /// </summary>
+    [Parameter]
+    public ElementProperties? Properties { get; set; }
+    
+    /// <summary>
+    /// Whether properties are currently loading
+    /// </summary>
+    [Parameter]
+    public bool IsLoading { get; set; }
+    
+    /// <summary>
+    /// Position of the panel
+    /// </summary>
+    [Parameter]
+    public PropertiesPanelPosition Position { get; set; } = PropertiesPanelPosition.Right;
+    
+    /// <summary>
+    /// Whether the panel can be closed
+    /// </summary>
+    [Parameter]
+    public bool AllowClose { get; set; } = true;
+    
+    /// <summary>
+    /// Whether the panel can be minimized
+    /// </summary>
+    [Parameter]
+    public bool AllowMinimize { get; set; } = true;
+    
+    /// <summary>
+    /// Message to show when no element is selected
+    /// </summary>
+    [Parameter]
+    public string EmptyMessage { get; set; } = "Select an element to view its properties";
+    
+    /// <summary>
+    /// Additional CSS classes
+    /// </summary>
+    [Parameter]
+    public string? CssClass { get; set; }
+    
+    /// <summary>
+    /// Event raised when the panel is closed
+    /// </summary>
+    [Parameter]
+    public EventCallback OnClose { get; set; }
+    
+    private bool IsMinimized { get; set; } = false;
+    
+    private string PositionClass => Position switch
+    {
+        PropertiesPanelPosition.Left => "position-left",
+        PropertiesPanelPosition.Right => "position-right",
+        PropertiesPanelPosition.BottomLeft => "position-bottom-left",
+        PropertiesPanelPosition.BottomRight => "position-bottom-right",
+        _ => "position-right"
+    };
+    
+    private void ToggleMinimize()
+    {
+        IsMinimized = !IsMinimized;
+    }
+    
+    private async Task Close()
+    {
+        IsVisible = false;
+        await OnClose.InvokeAsync();
+    }
+    
+    private void ToggleGroup(PropertyGroup group)
+    {
+        group.IsExpanded = !group.IsExpanded;
+    }
+    
+    private string GetValueTypeClass(string valueType)
+    {
+        return valueType switch
+        {
+            "boolean" or "logical" => "value-boolean",
+            "integer" => "value-integer",
+            "double" => "value-double",
+            "string" => "value-string",
+            "enumeration" => "value-enum",
+            "list" => "value-list",
+            "range" => "value-range",
+            _ => ""
+        };
+    }
+    
+    private string GetFullValue(PropertyValue prop)
+    {
+        if (string.IsNullOrEmpty(prop.Value))
+            return "";
+            
+        return string.IsNullOrEmpty(prop.Unit) 
+            ? prop.Value 
+            : $"{prop.Value} {prop.Unit}";
+    }
+    
+    /// <summary>
+    /// Shows the panel
+    /// </summary>
+    public void Show() => IsVisible = true;
+    
+    /// <summary>
+    /// Hides the panel
+    /// </summary>
+    public void Hide() => IsVisible = false;
+    
+    /// <summary>
+    /// Toggles panel visibility
+    /// </summary>
+    public void Toggle() => IsVisible = !IsVisible;
+}
+
