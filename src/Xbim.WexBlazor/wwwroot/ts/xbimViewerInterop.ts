@@ -557,7 +557,8 @@ export function unhighlightElements(viewerId: string, elementIds: number[], mode
             return false;
         }
         
-        viewer.setState(State.UNSTYLED, elementIds, modelId);
+        viewer.removeState(State.HIGHLIGHTED, elementIds, modelId);
+        viewer.resetState(elementIds, modelId);
         console.log(`Unhighlighted ${elementIds.length} elements`);
         return true;
     } catch (error) {
