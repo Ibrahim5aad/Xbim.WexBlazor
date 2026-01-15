@@ -78,6 +78,7 @@
     private List<ToolbarItemBase> _toolbarItems = new();
     private ToolbarPosition _toolbarPosition = ToolbarPosition.Bottom;
     private ToolbarAlignment _toolbarAlignment = ToolbarAlignment.Center;
+    private ToolbarButton? _themeButton;
     
     private List<DemoModel> _demoModels = new()
     {
@@ -112,6 +113,11 @@
     
     private void ApplyTheme()
     {
+        // Update theme button icon when theme changes
+        if (_themeButton != null)
+        {
+            _themeButton.Icon = GetThemeIcon();
+        }
         InvokeAsync(ApplyThemeAsync);
     }
     
@@ -130,9 +136,7 @@
             
             if (_gridPlugin != null && _gridActive)
             {
-                await _xbimViewer.RemovePluginAsync(_gridPlugin.Id);
                 _gridPlugin.Color = GetGridColor();
-                await _xbimViewer.AddPluginAsync(_gridPlugin);
             }
         }
         
@@ -228,6 +232,13 @@
     {
         if (_xbimViewer == null) return;
         
+        _themeButton = new ToolbarButton
+        {
+            Icon = GetThemeIcon(),
+            Tooltip = "Toggle Theme",
+            OnClick = EventCallback.Factory.Create(this, ToggleTheme)
+        };
+        
         _toolbarItems = new List<ToolbarItemBase>
         {
             ViewerBuiltInButtons.CreatePerspectiveToggle(_xbimViewer, startWithPerspective: true),
@@ -241,13 +252,15 @@
             ViewerBuiltInButtons.CreateClearSelectionButton(_xbimViewer),
             ViewerBuiltInButtons.CreateSectionBoxButtons(_xbimViewer, () => _sectionBoxPlugin, "Box", StateHasChanged),
             ViewerBuiltInButtons.CreateClippingPlaneButtons(_xbimViewer, () => _clippingPlanePlugin, "Plane", StateHasChanged),
-            new ToolbarButton
-            {
-                Icon = "bi-moon-stars",
-                Tooltip = "Toggle Theme",
-                OnClick = EventCallback.Factory.Create(this, ToggleTheme)
-            }
+            _themeButton
         };
+    }
+    
+    private string GetThemeIcon()
+    {
+        return ThemeService.CurrentTheme == ViewerTheme.Light 
+            ? "bi-sun" 
+            : "bi-moon-stars";
     }
 
     private int[] GetSelectedElementIds()

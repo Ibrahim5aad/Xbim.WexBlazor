@@ -97,19 +97,34 @@
 
                 @if (!string.IsNullOrEmpty(_selectedFileName))
                 {
-                    <div class="alert @GetFileAlertClass()">
-                        <i class="bi @GetFileIcon()"></i>
-                        <strong>Selected:</strong> @_selectedFileName
-                        <span class="badge @GetFormatBadgeClass() ms-2">@GetFormatName()</span>
-                        <span class="badge bg-secondary ms-1">@_selectedFileSize</span>
+                    <div class="alert @GetFileAlertClass() file-selected-alert">
+                        <div class="file-selected-header">
+                            <div class="file-selected-icon">
+                                <i class="bi @GetFileIcon()"></i>
+                            </div>
+                            <div class="file-selected-content">
+                                <div class="file-selected-label">
+                                    <strong>Selected:</strong>
+                                </div>
+                                <div class="file-selected-name">
+                                    @_selectedFileName
+                                </div>
+                                <div class="file-selected-badges">
+                                    <span class="badge @GetFormatBadgeClass()">@GetFormatName()</span>
+                                    <span class="badge bg-secondary">@_selectedFileSize</span>
+                                </div>
+                            </div>
+                        </div>
                         @if (_selectedFormat == ModelFormat.Ifc || _selectedFormat == ModelFormat.IfcZip)
                         {
-                            <div class="mt-2 small">
-                                <i class="bi bi-info-circle"></i> IFC files will be processed to generate geometry and enable property viewing.
+                            <div class="file-selected-info">
+                                <i class="bi bi-info-circle"></i>
+                                <span>IFC files will be processed to generate geometry and enable property viewing.</span>
                             </div>
                         }
                     </div>
                 }
+
             </div>
         }
         else if (_activeTab == "url")
@@ -232,8 +247,7 @@
     
     protected override void OnParametersSet()
     {
-        // Set default tab to "demo" if demo models are available
-        if (DemoModels != null && DemoModels.Any() && _activeTab == "local")
+        if (DemoModels != null && DemoModels.Any() && _activeTab == "local" && !IsLoading && string.IsNullOrEmpty(_selectedFileName))
         {
             _activeTab = "demo";
         }
@@ -329,10 +343,13 @@
         var file = e.File;
         if (file == null) return;
 
+        _activeTab = "local";
+        
         _selectedFileName = file.Name;
         _selectedFileSize = FormatFileSize(file.Size);
         _selectedFormat = FileLoadedEventArgs.GetFormatFromFileName(file.Name);
         _errorMessage = null;
+        ProcessingMessage = null;
 
         // Validate IFC files are allowed
         if (!AllowIfcFiles && (_selectedFormat == ModelFormat.Ifc || _selectedFormat == ModelFormat.IfcZip))
@@ -373,6 +390,10 @@
                 FileSize = file.Size,
                 Format = _selectedFormat
             });
+            
+            // Clear selected file info after successful processing
+            _selectedFileName = null;
+            _selectedFileSize = null;
         }
         catch (Exception ex)
         {
@@ -383,6 +404,7 @@
         {
             IsLoading = false;
             _loadingProgress = 0;
+            ProcessingMessage = null;
             StateHasChanged();
         }
     }
@@ -397,9 +419,9 @@
         {
             IsLoading = true;
             _loadingModelPath = modelPath;
+            _selectedFormat = FileLoadedEventArgs.GetFormatFromFileName(modelPath);
             StateHasChanged();
 
-            // Construct full URL
             string fullUrl;
             if (modelPath.StartsWith("http://") || modelPath.StartsWith("https://"))
             {
@@ -468,6 +490,12 @@
 
     private async Task Close()
     {
+        _selectedFileName = null;
+        _selectedFileSize = null;
+        _errorMessage = null;
+        IsLoading = false;
+        _loadingProgress = 0;
+        ProcessingMessage = null;
         IsVisible = false;
         await OnClose.InvokeAsync();
     }

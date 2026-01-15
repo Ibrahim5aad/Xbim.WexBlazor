@@ -119,4 +119,3 @@ public class ClippingPlanePlugin : ViewerPlugin
         };
     }
 }
-
