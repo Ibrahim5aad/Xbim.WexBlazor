@@ -74,7 +74,7 @@ Basic viewer:
 
 ### Platform Mode (With WexServer from [WexSDK](https://github.com/Ibrahim5aad/Xbim.WexSDK))
 
-Register services with Xbim Server connection:
+Register services with a WexServer connection:
 
 ```csharp
 // Program.cs
