@@ -37,9 +37,9 @@ public static class ServiceCollectionExtensions
     /// </summary>
     /// <param name="services">The service collection.</param>
     /// <returns>The service collection for chaining.</returns>
-    public static IServiceCollection AddXbimBlazorStandalone(this IServiceCollection services)
+    public static IServiceCollection AddWexBlazorStandalone(this IServiceCollection services)
     {
-        return services.AddXbimBlazorStandalone(_ => { });
+        return services.AddWexBlazorStandalone(_ => { });
     }
 
     /// <summary>
@@ -56,7 +56,7 @@ public static class ServiceCollectionExtensions
     /// <param name="services">The service collection.</param>
     /// <param name="configure">An action to configure the <see cref="XbimBlazorOptions"/>.</param>
     /// <returns>The service collection for chaining.</returns>
-    public static IServiceCollection AddXbimBlazorStandalone(
+    public static IServiceCollection AddWexBlazorStandalone(
         this IServiceCollection services,
         Action<XbimBlazorOptions> configure)
     {
@@ -128,7 +128,7 @@ public static class ServiceCollectionExtensions
     /// <param name="services">The service collection.</param>
     /// <param name="configuration">The configuration root.</param>
     /// <returns>The service collection for chaining.</returns>
-    public static IServiceCollection AddXbimBlazorStandalone(
+    public static IServiceCollection AddWexBlazorStandalone(
         this IServiceCollection services,
         IConfiguration configuration)
     {
@@ -139,7 +139,7 @@ public static class ServiceCollectionExtensions
         // Store standalone options for retrieval
         services.TryAddSingleton(standaloneOptions);
 
-        return services.AddXbimBlazorStandalone(options =>
+        return services.AddWexBlazorStandalone(options =>
         {
             // Apply theme settings
             options.InitialTheme = standaloneOptions.Theme.GetViewerTheme();
@@ -191,7 +191,7 @@ public static class ServiceCollectionExtensions
     /// <summary>
     /// Adds Xbim.WexBlazor services for Blazor Server applications with IFC processing capabilities.
     /// <para>
-    /// This registration extends <see cref="AddXbimBlazorStandalone"/> with:
+    /// This registration extends <see cref="AddWexBlazorStandalone"/> with:
     /// <list type="bullet">
     ///   <item><see cref="IIfcModelService"/> / <see cref="IfcModelService"/> - Server-side IFC to WexBIM conversion</item>
     /// </list>
@@ -211,7 +211,7 @@ public static class ServiceCollectionExtensions
     /// <summary>
     /// Adds Xbim.WexBlazor services for Blazor Server applications with IFC processing capabilities.
     /// <para>
-    /// This registration extends <see cref="AddXbimBlazorStandalone"/> with:
+    /// This registration extends <see cref="AddWexBlazorStandalone"/> with:
     /// <list type="bullet">
     ///   <item><see cref="IIfcModelService"/> / <see cref="IfcModelService"/> - Server-side IFC to WexBIM conversion</item>
     /// </list>
@@ -229,7 +229,7 @@ public static class ServiceCollectionExtensions
         Action<XbimBlazorOptions> configure)
     {
         // Add standalone services first
-        services.AddXbimBlazorStandalone(configure);
+        services.AddWexBlazorStandalone(configure);
 
         // Add server-specific services as both interface and concrete type for backward compatibility
         services.TryAddSingleton<IfcModelService>();
@@ -241,20 +241,20 @@ public static class ServiceCollectionExtensions
     /// <summary>
     /// Adds Xbim.WexBlazor services with default configuration.
     /// <para>
-    /// This is an alias for <see cref="AddXbimBlazorStandalone()"/> for backward compatibility.
+    /// This is an alias for <see cref="AddWexBlazorStandalone()"/> for backward compatibility.
     /// </para>
     /// </summary>
     /// <param name="services">The service collection.</param>
     /// <returns>The service collection for chaining.</returns>
     public static IServiceCollection AddXbimBlazor(this IServiceCollection services)
     {
-        return services.AddXbimBlazorStandalone();
+        return services.AddWexBlazorStandalone();
     }
 
     /// <summary>
     /// Adds Xbim.WexBlazor services with custom configuration.
     /// <para>
-    /// This is an alias for <see cref="AddXbimBlazorStandalone(IServiceCollection, Action{XbimBlazorOptions})"/>
+    /// This is an alias for <see cref="AddWexBlazorStandalone(IServiceCollection, Action{XbimBlazorOptions})"/>
     /// for backward compatibility.
     /// </para>
     /// </summary>
@@ -265,7 +265,7 @@ public static class ServiceCollectionExtensions
         this IServiceCollection services,
         Action<XbimBlazorOptions> configure)
     {
-        return services.AddXbimBlazorStandalone(configure);
+        return services.AddWexBlazorStandalone(configure);
     }
 
     /// <summary>
@@ -291,11 +291,11 @@ public static class ServiceCollectionExtensions
     /// <param name="baseUrl">The base URL of the Xbim API server.</param>
     /// <returns>The service collection for chaining.</returns>
     /// <exception cref="ArgumentException">Thrown if baseUrl is null or empty.</exception>
-    public static IServiceCollection AddXbimBlazorPlatformConnected(
+    public static IServiceCollection AddWexBlazorPlatformConnected(
         this IServiceCollection services,
         string baseUrl)
     {
-        return services.AddXbimBlazorPlatformConnected(baseUrl, _ => { });
+        return services.AddWexBlazorPlatformConnected(baseUrl, _ => { });
     }
 
     /// <summary>
@@ -314,12 +314,12 @@ public static class ServiceCollectionExtensions
     /// <param name="configureBlazor">An action to configure the <see cref="XbimBlazorOptions"/>.</param>
     /// <returns>The service collection for chaining.</returns>
     /// <exception cref="ArgumentException">Thrown if baseUrl is null or empty.</exception>
-    public static IServiceCollection AddXbimBlazorPlatformConnected(
+    public static IServiceCollection AddWexBlazorPlatformConnected(
         this IServiceCollection services,
         string baseUrl,
         Action<XbimBlazorOptions> configureBlazor)
     {
-        return services.AddXbimBlazorPlatformConnected(baseUrl, configureBlazor, _ => { });
+        return services.AddWexBlazorPlatformConnected(baseUrl, configureBlazor, _ => { });
     }
 
     /// <summary>
@@ -338,12 +338,12 @@ public static class ServiceCollectionExtensions
     /// <param name="tokenProvider">The token provider for authentication.</param>
     /// <returns>The service collection for chaining.</returns>
     /// <exception cref="ArgumentException">Thrown if baseUrl is null or empty.</exception>
-    public static IServiceCollection AddXbimBlazorPlatformConnected(
+    public static IServiceCollection AddWexBlazorPlatformConnected(
         this IServiceCollection services,
         string baseUrl,
         IAuthTokenProvider tokenProvider)
     {
-        return services.AddXbimBlazorPlatformConnected(baseUrl, _ => { }, options =>
+        return services.AddWexBlazorPlatformConnected(baseUrl, _ => { }, options =>
         {
             options.TokenProvider = tokenProvider;
         });
@@ -365,12 +365,12 @@ public static class ServiceCollectionExtensions
     /// <param name="tokenFactory">A function that provides authentication tokens.</param>
     /// <returns>The service collection for chaining.</returns>
     /// <exception cref="ArgumentException">Thrown if baseUrl is null or empty.</exception>
-    public static IServiceCollection AddXbimBlazorPlatformConnected(
+    public static IServiceCollection AddWexBlazorPlatformConnected(
         this IServiceCollection services,
         string baseUrl,
         Func<Task<string?>> tokenFactory)
     {
-        return services.AddXbimBlazorPlatformConnected(baseUrl, _ => { }, options =>
+        return services.AddWexBlazorPlatformConnected(baseUrl, _ => { }, options =>
         {
             options.TokenFactory = _ => tokenFactory();
         });
@@ -393,7 +393,7 @@ public static class ServiceCollectionExtensions
     /// <param name="configureClient">An action to configure the <see cref="XbimClientOptions"/>.</param>
     /// <returns>The service collection for chaining.</returns>
     /// <exception cref="ArgumentException">Thrown if baseUrl is null or empty.</exception>
-    public static IServiceCollection AddXbimBlazorPlatformConnected(
+    public static IServiceCollection AddWexBlazorPlatformConnected(
         this IServiceCollection services,
         string baseUrl,
         Action<XbimBlazorOptions> configureBlazor,
@@ -403,10 +403,10 @@ public static class ServiceCollectionExtensions
             throw new ArgumentException("BaseUrl must be provided.", nameof(baseUrl));
 
         // Add standalone services first
-        services.AddXbimBlazorStandalone(configureBlazor);
+        services.AddWexBlazorStandalone(configureBlazor);
 
         // Add the Xbim API client
-        services.AddXbimClient(options =>
+        services.AddWexServerClient(options =>
         {
             options.BaseUrl = baseUrl;
             configureClient(options);
@@ -457,11 +457,11 @@ public static class ServiceCollectionExtensions
     /// <param name="configuration">The configuration root.</param>
     /// <returns>The service collection for chaining.</returns>
     /// <exception cref="InvalidOperationException">Thrown when server configuration is missing or invalid.</exception>
-    public static IServiceCollection AddXbimBlazorPlatformConnected(
+    public static IServiceCollection AddWexBlazorPlatformConnected(
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        return services.AddXbimBlazorPlatformConnected(configuration, _ => { }, _ => { });
+        return services.AddWexBlazorPlatformConnected(configuration, _ => { }, _ => { });
     }
 
     /// <summary>
@@ -476,12 +476,12 @@ public static class ServiceCollectionExtensions
     /// <param name="configureBlazor">An action to configure additional Blazor options.</param>
     /// <returns>The service collection for chaining.</returns>
     /// <exception cref="InvalidOperationException">Thrown when server configuration is missing or invalid.</exception>
-    public static IServiceCollection AddXbimBlazorPlatformConnected(
+    public static IServiceCollection AddWexBlazorPlatformConnected(
         this IServiceCollection services,
         IConfiguration configuration,
         Action<XbimBlazorOptions> configureBlazor)
     {
-        return services.AddXbimBlazorPlatformConnected(configuration, configureBlazor, _ => { });
+        return services.AddWexBlazorPlatformConnected(configuration, configureBlazor, _ => { });
     }
 
     /// <summary>
@@ -515,7 +515,7 @@ public static class ServiceCollectionExtensions
     /// <param name="configureClient">An action to configure the Xbim client options (e.g., authentication).</param>
     /// <returns>The service collection for chaining.</returns>
     /// <exception cref="InvalidOperationException">Thrown when server configuration is missing or invalid.</exception>
-    public static IServiceCollection AddXbimBlazorPlatformConnected(
+    public static IServiceCollection AddWexBlazorPlatformConnected(
         this IServiceCollection services,
         IConfiguration configuration,
         Action<XbimBlazorOptions> configureBlazor,
@@ -560,13 +560,13 @@ public static class ServiceCollectionExtensions
         {
             options.BaseUrl = serverOptions.BaseUrl!;
             // Note: TimeoutSeconds is stored in XbimServerOptions for reference,
-            // but HttpClient timeout is configured by the host (AddXbimClient handles defaults)
+            // but HttpClient timeout is configured by the host (AddWexServerClient handles defaults)
 
             // Apply any custom configuration
             configureClient(options);
         };
 
-        return services.AddXbimBlazorPlatformConnected(
+        return services.AddWexBlazorPlatformConnected(
             serverOptions.BaseUrl!,
             combinedConfigure,
             combinedClientConfigure);

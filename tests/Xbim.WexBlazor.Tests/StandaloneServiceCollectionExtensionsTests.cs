@@ -11,16 +11,16 @@ namespace Xbim.WexBlazor.Tests;
 /// </summary>
 public class StandaloneServiceCollectionExtensionsTests
 {
-    #region AddXbimBlazorStandalone Tests
+    #region AddWexBlazorStandalone Tests
 
     [Fact]
-    public void AddXbimBlazorStandalone_ShouldRegisterCoreServices()
+    public void AddWexBlazorStandalone_ShouldRegisterCoreServices()
     {
         // Arrange
         var services = new ServiceCollection();
 
         // Act
-        services.AddXbimBlazorStandalone();
+        services.AddWexBlazorStandalone();
 
         // Assert - Core services should be registered
         Assert.Contains(services, d => d.ServiceType == typeof(ThemeService));
@@ -30,13 +30,13 @@ public class StandaloneServiceCollectionExtensionsTests
     }
 
     [Fact]
-    public void AddXbimBlazorStandalone_ServicesShouldBeSingletons()
+    public void AddWexBlazorStandalone_ServicesShouldBeSingletons()
     {
         // Arrange
         var services = new ServiceCollection();
 
         // Act
-        services.AddXbimBlazorStandalone();
+        services.AddWexBlazorStandalone();
 
         // Assert - Services should be registered as singletons
         var themeDescriptor = services.First(d => d.ServiceType == typeof(ThemeService));
@@ -47,13 +47,13 @@ public class StandaloneServiceCollectionExtensionsTests
     }
 
     [Fact]
-    public void AddXbimBlazorStandalone_WithOptions_ShouldConfigureTheme()
+    public void AddWexBlazorStandalone_WithOptions_ShouldConfigureTheme()
     {
         // Arrange
         var services = new ServiceCollection();
 
         // Act
-        services.AddXbimBlazorStandalone(options =>
+        services.AddWexBlazorStandalone(options =>
         {
             options.InitialTheme = ViewerTheme.Dark;
             options.LightAccentColor = "#custom-light";
@@ -67,13 +67,13 @@ public class StandaloneServiceCollectionExtensionsTests
     }
 
     [Fact]
-    public void AddXbimBlazorStandalone_WithOptions_ShouldStoreOptions()
+    public void AddWexBlazorStandalone_WithOptions_ShouldStoreOptions()
     {
         // Arrange
         var services = new ServiceCollection();
 
         // Act
-        services.AddXbimBlazorStandalone(options =>
+        services.AddWexBlazorStandalone(options =>
         {
             options.InitialTheme = ViewerTheme.Light;
         });
@@ -86,11 +86,11 @@ public class StandaloneServiceCollectionExtensionsTests
     }
 
     [Fact]
-    public void AddXbimBlazorStandalone_ServicesCanBeResolved()
+    public void AddWexBlazorStandalone_ServicesCanBeResolved()
     {
         // Arrange
         var services = new ServiceCollection();
-        services.AddXbimBlazorStandalone();
+        services.AddWexBlazorStandalone();
         var provider = services.BuildServiceProvider();
 
         // Act & Assert - Services should be resolvable
@@ -101,11 +101,11 @@ public class StandaloneServiceCollectionExtensionsTests
     }
 
     [Fact]
-    public void AddXbimBlazorStandalone_InterfaceAndConcreteResolveSameInstance()
+    public void AddWexBlazorStandalone_InterfaceAndConcreteResolveSameInstance()
     {
         // Arrange
         var services = new ServiceCollection();
-        services.AddXbimBlazorStandalone();
+        services.AddWexBlazorStandalone();
         var provider = services.BuildServiceProvider();
 
         // Act
@@ -117,13 +117,13 @@ public class StandaloneServiceCollectionExtensionsTests
     }
 
     [Fact]
-    public void AddXbimBlazorStandalone_RegistersGuardServicesInsteadOfRealServerServices()
+    public void AddWexBlazorStandalone_RegistersGuardServicesInsteadOfRealServerServices()
     {
         // Arrange
         var services = new ServiceCollection();
 
         // Act
-        services.AddXbimBlazorStandalone();
+        services.AddWexBlazorStandalone();
         var provider = services.BuildServiceProvider();
 
         // Assert - Server service interfaces ARE registered, but with guard implementations
@@ -152,7 +152,7 @@ public class StandaloneServiceCollectionExtensionsTests
         var backwardCompatServices = new ServiceCollection();
 
         // Act
-        standaloneServices.AddXbimBlazorStandalone();
+        standaloneServices.AddWexBlazorStandalone();
         backwardCompatServices.AddXbimBlazor();
 
         // Assert - Both should register the same service types
@@ -275,13 +275,13 @@ public class StandaloneServiceCollectionExtensionsTests
     #region Hosting Mode Provider Tests
 
     [Fact]
-    public void AddXbimBlazorStandalone_ShouldRegisterStandaloneHostingMode()
+    public void AddWexBlazorStandalone_ShouldRegisterStandaloneHostingMode()
     {
         // Arrange
         var services = new ServiceCollection();
 
         // Act
-        services.AddXbimBlazorStandalone();
+        services.AddWexBlazorStandalone();
         var provider = services.BuildServiceProvider();
 
         // Assert
@@ -309,13 +309,13 @@ public class StandaloneServiceCollectionExtensionsTests
     }
 
     [Fact]
-    public void AddXbimBlazorPlatformConnected_ShouldRegisterPlatformConnectedHostingMode()
+    public void AddWexBlazorPlatformConnected_ShouldRegisterPlatformConnectedHostingMode()
     {
         // Arrange
         var services = new ServiceCollection();
 
         // Act
-        services.AddXbimBlazorPlatformConnected("https://localhost:5000");
+        services.AddWexBlazorPlatformConnected("https://localhost:5000");
         var provider = services.BuildServiceProvider();
 
         // Assert
@@ -326,14 +326,14 @@ public class StandaloneServiceCollectionExtensionsTests
     }
 
     [Fact]
-    public void AddXbimBlazorPlatformConnected_AfterStandalone_ShouldOverrideToConnectedMode()
+    public void AddWexBlazorPlatformConnected_AfterStandalone_ShouldOverrideToConnectedMode()
     {
         // Arrange
         var services = new ServiceCollection();
 
         // Act - First standalone (registers Standalone mode), then ServerConnected (should override)
-        services.AddXbimBlazorStandalone();
-        services.AddXbimBlazorPlatformConnected("https://localhost:5000");
+        services.AddWexBlazorStandalone();
+        services.AddWexBlazorPlatformConnected("https://localhost:5000");
         var provider = services.BuildServiceProvider();
 
         // Assert
@@ -347,7 +347,7 @@ public class StandaloneServiceCollectionExtensionsTests
     {
         // Arrange
         var services = new ServiceCollection();
-        services.AddXbimBlazorStandalone();
+        services.AddWexBlazorStandalone();
         var provider = services.BuildServiceProvider();
 
         // Act
@@ -363,14 +363,14 @@ public class StandaloneServiceCollectionExtensionsTests
     #region Double Registration Idempotency Tests
 
     [Fact]
-    public void AddXbimBlazorStandalone_CalledTwice_ShouldNotDuplicateServices()
+    public void AddWexBlazorStandalone_CalledTwice_ShouldNotDuplicateServices()
     {
         // Arrange
         var services = new ServiceCollection();
 
         // Act
-        services.AddXbimBlazorStandalone();
-        services.AddXbimBlazorStandalone();
+        services.AddWexBlazorStandalone();
+        services.AddWexBlazorStandalone();
 
         // Assert - Services should not be duplicated (TryAdd semantics)
         var themeCount = services.Count(d => d.ServiceType == typeof(ThemeService));
@@ -381,14 +381,14 @@ public class StandaloneServiceCollectionExtensionsTests
     }
 
     [Fact]
-    public void AddXbimBlazor_ThenAddXbimBlazorStandalone_ShouldNotDuplicate()
+    public void AddXbimBlazor_ThenAddWexBlazorStandalone_ShouldNotDuplicate()
     {
         // Arrange
         var services = new ServiceCollection();
 
         // Act
         services.AddXbimBlazor();
-        services.AddXbimBlazorStandalone();
+        services.AddWexBlazorStandalone();
 
         // Assert - Services should not be duplicated
         var themeCount = services.Count(d => d.ServiceType == typeof(ThemeService));

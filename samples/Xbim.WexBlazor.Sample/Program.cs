@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Components.Web;
+using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using Xbim.WexBlazor;
 using Xbim.WexBlazor.Sample;
@@ -15,7 +15,7 @@ var httpClient = new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.
 builder.Services.AddScoped(_ => httpClient);
 
 // Add Xbim.WexBlazor standalone services with configuration
-builder.Services.AddXbimBlazorStandalone(options =>
+builder.Services.AddWexBlazorStandalone(options =>
 {
     options.InitialTheme = ViewerTheme.Dark;
     options.LightAccentColor = "#0969da";

@@ -178,7 +178,7 @@ public class XbimServerOptions
             throw new InvalidOperationException(
                 $"Xbim.WexServer configuration is invalid: 'BaseUrl' is required. " +
                 $"Configure the '{SectionName}:BaseUrl' setting in appsettings.json or call " +
-                $"AddXbimBlazorPlatformConnected(baseUrl) with a valid URL.");
+                $"AddWexBlazorPlatformConnected(baseUrl) with a valid URL.");
         }
 
         if (!Uri.TryCreate(BaseUrl, UriKind.Absolute, out var uri) ||

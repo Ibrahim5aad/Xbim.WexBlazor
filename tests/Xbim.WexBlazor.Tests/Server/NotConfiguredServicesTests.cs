@@ -31,7 +31,7 @@ public class NotConfiguredServicesTests
 
         // Assert
         Assert.Contains("IWorkspacesService", exception.Message);
-        Assert.Contains("AddXbimBlazorPlatformConnected", exception.Message);
+        Assert.Contains("AddWexBlazorPlatformConnected", exception.Message);
         Assert.Contains("standalone mode", exception.Message);
     }
 
@@ -72,13 +72,13 @@ public class NotConfiguredServicesTests
     #region Guard Registration in Standalone Mode Tests
 
     [Fact]
-    public void AddXbimBlazorStandalone_ShouldRegisterGuardServices()
+    public void AddWexBlazorStandalone_ShouldRegisterGuardServices()
     {
         // Arrange
         var services = new ServiceCollection();
 
         // Act
-        services.AddXbimBlazorStandalone();
+        services.AddWexBlazorStandalone();
 
         // Assert - Guard services should be registered
         Assert.Contains(services, d => d.ServiceType == typeof(IWorkspacesService));
@@ -90,11 +90,11 @@ public class NotConfiguredServicesTests
     }
 
     [Fact]
-    public void AddXbimBlazorStandalone_GuardsShouldBeResolvable()
+    public void AddWexBlazorStandalone_GuardsShouldBeResolvable()
     {
         // Arrange
         var services = new ServiceCollection();
-        services.AddXbimBlazorStandalone();
+        services.AddWexBlazorStandalone();
         var provider = services.BuildServiceProvider();
 
         // Act & Assert - Guards should be resolvable (no DI resolution failures)
@@ -107,11 +107,11 @@ public class NotConfiguredServicesTests
     }
 
     [Fact]
-    public void AddXbimBlazorStandalone_GuardsShouldBeCorrectTypes()
+    public void AddWexBlazorStandalone_GuardsShouldBeCorrectTypes()
     {
         // Arrange
         var services = new ServiceCollection();
-        services.AddXbimBlazorStandalone();
+        services.AddWexBlazorStandalone();
         var provider = services.BuildServiceProvider();
 
         // Act
@@ -140,7 +140,7 @@ public class NotConfiguredServicesTests
     {
         // Arrange
         var services = new ServiceCollection();
-        services.AddXbimBlazorStandalone();
+        services.AddWexBlazorStandalone();
         var provider = services.BuildServiceProvider();
         var service = provider.GetRequiredService<IWorkspacesService>();
 
@@ -151,7 +151,7 @@ public class NotConfiguredServicesTests
 
         var ex2 = await Assert.ThrowsAsync<ServerServiceNotConfiguredException>(
             () => service.GetAsync(Guid.NewGuid()));
-        Assert.Contains("AddXbimBlazorPlatformConnected", ex2.Message);
+        Assert.Contains("AddWexBlazorPlatformConnected", ex2.Message);
 
         await Assert.ThrowsAsync<ServerServiceNotConfiguredException>(
             () => service.ListAsync());
@@ -165,7 +165,7 @@ public class NotConfiguredServicesTests
     {
         // Arrange
         var services = new ServiceCollection();
-        services.AddXbimBlazorStandalone();
+        services.AddWexBlazorStandalone();
         var provider = services.BuildServiceProvider();
         var service = provider.GetRequiredService<IProjectsService>();
 
@@ -188,7 +188,7 @@ public class NotConfiguredServicesTests
     {
         // Arrange
         var services = new ServiceCollection();
-        services.AddXbimBlazorStandalone();
+        services.AddWexBlazorStandalone();
         var provider = services.BuildServiceProvider();
         var service = provider.GetRequiredService<IFilesService>();
 
@@ -223,7 +223,7 @@ public class NotConfiguredServicesTests
     {
         // Arrange
         var services = new ServiceCollection();
-        services.AddXbimBlazorStandalone();
+        services.AddWexBlazorStandalone();
         var provider = services.BuildServiceProvider();
         var service = provider.GetRequiredService<IModelsService>();
 
@@ -255,7 +255,7 @@ public class NotConfiguredServicesTests
     {
         // Arrange
         var services = new ServiceCollection();
-        services.AddXbimBlazorStandalone();
+        services.AddWexBlazorStandalone();
         var provider = services.BuildServiceProvider();
         var service = provider.GetRequiredService<IUsageService>();
 
@@ -272,7 +272,7 @@ public class NotConfiguredServicesTests
     {
         // Arrange
         var services = new ServiceCollection();
-        services.AddXbimBlazorStandalone();
+        services.AddWexBlazorStandalone();
         var provider = services.BuildServiceProvider();
         var service = provider.GetRequiredService<IProcessingService>();
 
@@ -305,13 +305,13 @@ public class NotConfiguredServicesTests
     #region Server-Connected Overrides Guards Tests
 
     [Fact]
-    public void AddXbimBlazorPlatformConnected_ShouldOverrideGuards()
+    public void AddWexBlazorPlatformConnected_ShouldOverrideGuards()
     {
         // Arrange
         var services = new ServiceCollection();
 
         // Act - Calling ServerConnected should replace guards with real implementations
-        services.AddXbimBlazorPlatformConnected("https://localhost:5000");
+        services.AddWexBlazorPlatformConnected("https://localhost:5000");
 
         // Assert - Service descriptors should point to real implementations, not guards
         var workspacesDescriptor = services.First(d => d.ServiceType == typeof(IWorkspacesService));
@@ -330,14 +330,14 @@ public class NotConfiguredServicesTests
     }
 
     [Fact]
-    public void AddXbimBlazorPlatformConnected_AfterStandalone_ShouldStillOverrideGuards()
+    public void AddWexBlazorPlatformConnected_AfterStandalone_ShouldStillOverrideGuards()
     {
         // Arrange
         var services = new ServiceCollection();
 
         // Act - First register standalone (registers guards), then server-connected (should override)
-        services.AddXbimBlazorStandalone();
-        services.AddXbimBlazorPlatformConnected("https://localhost:5000");
+        services.AddWexBlazorStandalone();
+        services.AddWexBlazorPlatformConnected("https://localhost:5000");
 
         // Assert - Service descriptor should point to real implementation
         var workspacesDescriptor = services.First(d => d.ServiceType == typeof(IWorkspacesService));
@@ -345,13 +345,13 @@ public class NotConfiguredServicesTests
     }
 
     [Fact]
-    public void AddXbimBlazorPlatformConnected_OverridesGuardsNotDuplicates()
+    public void AddWexBlazorPlatformConnected_OverridesGuardsNotDuplicates()
     {
         // Arrange
         var services = new ServiceCollection();
 
         // Act
-        services.AddXbimBlazorPlatformConnected("https://localhost:5000");
+        services.AddWexBlazorPlatformConnected("https://localhost:5000");
 
         // Assert - Should be exactly one registration per service type (not guards + real)
         Assert.Single(services, d => d.ServiceType == typeof(IWorkspacesService));
@@ -399,8 +399,8 @@ public class NotConfiguredServicesTests
         var exception = new StandaloneOnlyComponentException("FileLoaderPanel");
 
         // Assert
-        Assert.Contains("AddXbimBlazorStandalone", exception.Message);
-        Assert.Contains("AddXbimBlazorPlatformConnected", exception.Message);
+        Assert.Contains("AddWexBlazorStandalone", exception.Message);
+        Assert.Contains("AddWexBlazorPlatformConnected", exception.Message);
     }
 
     [Fact]
@@ -429,11 +429,11 @@ public class NotConfiguredServicesTests
     #region Standalone Viewer Components Do Not Require Server Tests
 
     [Fact]
-    public void AddXbimBlazorStandalone_StandaloneServicesWorkWithoutServer()
+    public void AddWexBlazorStandalone_StandaloneServicesWorkWithoutServer()
     {
         // Arrange
         var services = new ServiceCollection();
-        services.AddXbimBlazorStandalone();
+        services.AddWexBlazorStandalone();
         var provider = services.BuildServiceProvider();
 
         // Act & Assert - Standalone services should work normally

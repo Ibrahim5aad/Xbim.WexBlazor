@@ -1,11 +1,11 @@
-﻿namespace Xbim.WexBlazor;
+namespace Xbim.WexBlazor;
 
 /// <summary>
 /// Exception thrown when a standalone-only component is used in PlatformConnected mode.
 /// <para>
 /// This exception indicates that a component designed for standalone viewer applications
 /// (such as <c>FileLoaderPanel</c>) is being used in an application configured with
-/// <c>AddXbimBlazorPlatformConnected()</c>.
+/// <c>AddWexBlazorPlatformConnected()</c>.
 /// </para>
 /// </summary>
 public class StandaloneOnlyComponentException : InvalidOperationException
@@ -13,8 +13,8 @@ public class StandaloneOnlyComponentException : InvalidOperationException
     private const string DefaultMessageTemplate =
         "'{0}' is Standalone-only. Use Workspace -> Project -> Model -> Version navigation instead. " +
         "In PlatformConnected mode, use server-backed components for file management. " +
-        "If you need file loading in standalone mode, use 'AddXbimBlazorStandalone()' or 'AddXbimBlazorServer()' " +
-        "instead of 'AddXbimBlazorPlatformConnected()'.";
+        "If you need file loading in standalone mode, use 'AddWexBlazorStandalone()' or 'AddXbimBlazorServer()' " +
+        "instead of 'AddWexBlazorPlatformConnected()'.";
 
     /// <summary>
     /// Gets the name of the component that was incorrectly used.

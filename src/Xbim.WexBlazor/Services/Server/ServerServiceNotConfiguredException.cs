@@ -5,15 +5,15 @@ namespace Xbim.WexBlazor.Services.Server;
 /// <para>
 /// This exception indicates that a component or code is attempting to use a server-backed
 /// service (such as <c>IWorkspacesService</c>, <c>IProjectsService</c>, etc.) but the
-/// application was configured with <c>AddXbimBlazorStandalone()</c> instead of
-/// <c>AddXbimBlazorPlatformConnected()</c>.
+/// application was configured with <c>AddWexBlazorStandalone()</c> instead of
+/// <c>AddWexBlazorPlatformConnected()</c>.
 /// </para>
 /// </summary>
 public class ServerServiceNotConfiguredException : InvalidOperationException
 {
     private const string DefaultMessageTemplate =
         "The service '{0}' requires Xbim.WexServer connectivity, but the application is configured in standalone mode. " +
-        "To use server-backed services, call 'AddXbimBlazorPlatformConnected(baseUrl)' instead of 'AddXbimBlazorStandalone()' " +
+        "To use server-backed services, call 'AddWexBlazorPlatformConnected(baseUrl)' instead of 'AddWexBlazorStandalone()' " +
         "during service registration.";
 
     /// <summary>

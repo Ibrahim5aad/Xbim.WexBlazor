@@ -1,4 +1,4 @@
-﻿using Bunit;
+using Bunit;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
 using Xbim.WexBlazor.Components;
@@ -16,7 +16,7 @@ public class FileLoaderPanelTests : TestContext
     public void FileLoaderPanel_InStandaloneMode_ShouldRenderSuccessfully()
     {
         // Arrange
-        Services.AddXbimBlazorStandalone();
+        Services.AddWexBlazorStandalone();
 
         // bUnit provides FakeNavigationManager automatically
 
@@ -47,7 +47,7 @@ public class FileLoaderPanelTests : TestContext
     public void FileLoaderPanel_InPlatformConnectedMode_ShouldThrowStandaloneOnlyComponentException()
     {
         // Arrange
-        Services.AddXbimBlazorPlatformConnected("https://localhost:5000");
+        Services.AddWexBlazorPlatformConnected("https://localhost:5000");
 
         // Act & Assert
         var exception = Assert.Throws<StandaloneOnlyComponentException>(() =>
@@ -68,7 +68,7 @@ public class FileLoaderPanelTests : TestContext
     public void FileLoaderPanel_InPlatformConnectedMode_ExceptionShouldSuggestNavigation()
     {
         // Arrange
-        Services.AddXbimBlazorPlatformConnected("https://localhost:5000");
+        Services.AddWexBlazorPlatformConnected("https://localhost:5000");
 
         // Act
         var exception = Assert.Throws<StandaloneOnlyComponentException>(() =>
@@ -78,7 +78,7 @@ public class FileLoaderPanelTests : TestContext
 
         // Assert - Exception message should suggest using navigation instead
         Assert.Contains("navigation", exception.Message);
-        Assert.Contains("AddXbimBlazorStandalone", exception.Message);
+        Assert.Contains("AddWexBlazorStandalone", exception.Message);
     }
 
     #endregion
@@ -106,7 +106,7 @@ public class FileLoaderPanelTests : TestContext
     public void StandaloneOnlyComponentException_MessageFormat_ShouldBeUserFriendly()
     {
         // Arrange
-        Services.AddXbimBlazorPlatformConnected("https://localhost:5000");
+        Services.AddWexBlazorPlatformConnected("https://localhost:5000");
 
         // Act
         var exception = Assert.Throws<StandaloneOnlyComponentException>(() =>
@@ -133,7 +133,7 @@ public class FileLoaderPanelTests : TestContext
     public void FileLoaderPanel_StandaloneMode_HostingModeProviderIsStandalone()
     {
         // Arrange
-        Services.AddXbimBlazorStandalone();
+        Services.AddWexBlazorStandalone();
         var provider = Services.BuildServiceProvider();
 
         // Act
@@ -148,7 +148,7 @@ public class FileLoaderPanelTests : TestContext
     public void FileLoaderPanel_PlatformConnectedMode_HostingModeProviderIsPlatformConnected()
     {
         // Arrange
-        Services.AddXbimBlazorPlatformConnected("https://localhost:5000");
+        Services.AddWexBlazorPlatformConnected("https://localhost:5000");
         var provider = Services.BuildServiceProvider();
 
         // Act

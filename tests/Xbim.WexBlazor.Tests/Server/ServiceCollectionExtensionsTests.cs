@@ -8,13 +8,13 @@ namespace Xbim.WexBlazor.Tests.Server;
 public class ServiceCollectionExtensionsTests
 {
     [Fact]
-    public void AddXbimBlazorPlatformConnected_ShouldRegisterServerServices()
+    public void AddWexBlazorPlatformConnected_ShouldRegisterServerServices()
     {
         // Arrange
         var services = new ServiceCollection();
 
         // Act
-        services.AddXbimBlazorPlatformConnected("https://localhost:5000");
+        services.AddWexBlazorPlatformConnected("https://localhost:5000");
 
         // Assert - All server-backed services should be registered
         Assert.Contains(services, d => d.ServiceType == typeof(IWorkspacesService));
@@ -26,63 +26,63 @@ public class ServiceCollectionExtensionsTests
     }
 
     [Fact]
-    public void AddXbimBlazorPlatformConnected_ShouldRegisterApiClient()
+    public void AddWexBlazorPlatformConnected_ShouldRegisterApiClient()
     {
         // Arrange
         var services = new ServiceCollection();
 
         // Act
-        services.AddXbimBlazorPlatformConnected("https://localhost:5000");
+        services.AddWexBlazorPlatformConnected("https://localhost:5000");
 
         // Assert - API client should be registered
         Assert.Contains(services, d => d.ServiceType == typeof(IXbimApiClient));
     }
 
     [Fact]
-    public void AddXbimBlazorPlatformConnected_WithEmptyBaseUrl_ShouldThrow()
+    public void AddWexBlazorPlatformConnected_WithEmptyBaseUrl_ShouldThrow()
     {
         // Arrange
         var services = new ServiceCollection();
 
         // Act & Assert
-        Assert.Throws<ArgumentException>(() => services.AddXbimBlazorPlatformConnected(""));
-        Assert.Throws<ArgumentException>(() => services.AddXbimBlazorPlatformConnected((string)null!));
+        Assert.Throws<ArgumentException>(() => services.AddWexBlazorPlatformConnected(""));
+        Assert.Throws<ArgumentException>(() => services.AddWexBlazorPlatformConnected((string)null!));
     }
 
     [Fact]
-    public void AddXbimBlazorPlatformConnected_WithTokenProvider_ShouldRegisterProvider()
+    public void AddWexBlazorPlatformConnected_WithTokenProvider_ShouldRegisterProvider()
     {
         // Arrange
         var services = new ServiceCollection();
         var tokenProvider = new StaticTokenProvider("test-token");
 
         // Act
-        services.AddXbimBlazorPlatformConnected("https://localhost:5000", tokenProvider);
+        services.AddWexBlazorPlatformConnected("https://localhost:5000", tokenProvider);
 
         // Assert - Token provider should be registered
         Assert.Contains(services, d => d.ServiceType == typeof(IAuthTokenProvider));
     }
 
     [Fact]
-    public void AddXbimBlazorPlatformConnected_WithTokenFactory_ShouldRegisterServices()
+    public void AddWexBlazorPlatformConnected_WithTokenFactory_ShouldRegisterServices()
     {
         // Arrange
         var services = new ServiceCollection();
         Func<Task<string?>> tokenFactory = () => Task.FromResult<string?>("test-token");
 
         // Act
-        services.AddXbimBlazorPlatformConnected("https://localhost:5000", tokenFactory);
+        services.AddWexBlazorPlatformConnected("https://localhost:5000", tokenFactory);
 
         // Assert
         Assert.Contains(services, d => d.ServiceType == typeof(IWorkspacesService));
     }
 
     [Fact]
-    public void AddXbimBlazorPlatformConnected_ServicesShouldBeSingletons()
+    public void AddWexBlazorPlatformConnected_ServicesShouldBeSingletons()
     {
         // Arrange
         var services = new ServiceCollection();
-        services.AddXbimBlazorPlatformConnected("https://localhost:5000");
+        services.AddWexBlazorPlatformConnected("https://localhost:5000");
 
         // Assert - Services should be registered as singletons
         var workspacesDescriptor = services.First(d => d.ServiceType == typeof(IWorkspacesService));
@@ -93,13 +93,13 @@ public class ServiceCollectionExtensionsTests
     }
 
     [Fact]
-    public void AddXbimBlazorPlatformConnected_ShouldAlsoRegisterStandaloneServices()
+    public void AddWexBlazorPlatformConnected_ShouldAlsoRegisterStandaloneServices()
     {
         // Arrange
         var services = new ServiceCollection();
 
         // Act
-        services.AddXbimBlazorPlatformConnected("https://localhost:5000");
+        services.AddWexBlazorPlatformConnected("https://localhost:5000");
 
         // Assert - Standalone services should also be available
         Assert.Contains(services, d => d.ServiceType == typeof(Xbim.WexBlazor.Services.ThemeService));
@@ -107,13 +107,13 @@ public class ServiceCollectionExtensionsTests
     }
 
     [Fact]
-    public void AddXbimBlazorPlatformConnected_WithBlazorOptions_ShouldConfigureOptions()
+    public void AddWexBlazorPlatformConnected_WithBlazorOptions_ShouldConfigureOptions()
     {
         // Arrange
         var services = new ServiceCollection();
 
         // Act
-        services.AddXbimBlazorPlatformConnected("https://localhost:5000", opt =>
+        services.AddWexBlazorPlatformConnected("https://localhost:5000", opt =>
         {
             opt.InitialTheme = Xbim.WexBlazor.Models.ViewerTheme.Dark;
         });
@@ -126,13 +126,13 @@ public class ServiceCollectionExtensionsTests
     }
 
     [Fact]
-    public void AddXbimBlazorPlatformConnected_WithClientOptions_ShouldNotThrow()
+    public void AddWexBlazorPlatformConnected_WithClientOptions_ShouldNotThrow()
     {
         // Arrange
         var services = new ServiceCollection();
 
         // Act & Assert - Should not throw
-        services.AddXbimBlazorPlatformConnected(
+        services.AddWexBlazorPlatformConnected(
             "https://localhost:5000",
             blazorOpt => { },
             clientOpt => { clientOpt.TokenFactory = _ => Task.FromResult<string?>("token"); });

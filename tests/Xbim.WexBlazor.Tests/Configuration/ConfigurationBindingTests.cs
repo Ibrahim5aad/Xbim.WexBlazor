@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Xbim.WexBlazor.Models;
 using Xbim.WexBlazor.Services.Abstractions.Server;
@@ -8,7 +8,7 @@ namespace Xbim.WexBlazor.Tests.Configuration;
 public class ConfigurationBindingTests
 {
     [Fact]
-    public void AddXbimBlazorStandalone_WithConfiguration_BindsThemeOptions()
+    public void AddWexBlazorStandalone_WithConfiguration_BindsThemeOptions()
     {
         // Arrange
         var services = new ServiceCollection();
@@ -22,7 +22,7 @@ public class ConfigurationBindingTests
             .Build();
 
         // Act
-        services.AddXbimBlazorStandalone(configuration);
+        services.AddWexBlazorStandalone(configuration);
         var provider = services.BuildServiceProvider();
         var options = provider.GetService<XbimBlazorOptions>();
 
@@ -34,7 +34,7 @@ public class ConfigurationBindingTests
     }
 
     [Fact]
-    public void AddXbimBlazorStandalone_WithConfiguration_BindsFileLoaderPanelOptions()
+    public void AddWexBlazorStandalone_WithConfiguration_BindsFileLoaderPanelOptions()
     {
         // Arrange
         var services = new ServiceCollection();
@@ -48,7 +48,7 @@ public class ConfigurationBindingTests
             .Build();
 
         // Act
-        services.AddXbimBlazorStandalone(configuration);
+        services.AddWexBlazorStandalone(configuration);
         var provider = services.BuildServiceProvider();
         var options = provider.GetService<XbimBlazorOptions>();
 
@@ -60,7 +60,7 @@ public class ConfigurationBindingTests
     }
 
     [Fact]
-    public void AddXbimBlazorStandalone_WithConfiguration_BindsDemoModels()
+    public void AddWexBlazorStandalone_WithConfiguration_BindsDemoModels()
     {
         // Arrange
         var services = new ServiceCollection();
@@ -76,7 +76,7 @@ public class ConfigurationBindingTests
             .Build();
 
         // Act
-        services.AddXbimBlazorStandalone(configuration);
+        services.AddWexBlazorStandalone(configuration);
         var provider = services.BuildServiceProvider();
         var options = provider.GetService<XbimBlazorOptions>();
 
@@ -114,7 +114,7 @@ public class ConfigurationBindingTests
     }
 
     [Fact]
-    public void AddXbimBlazorPlatformConnected_WithConfiguration_BindsServerOptions()
+    public void AddWexBlazorPlatformConnected_WithConfiguration_BindsServerOptions()
     {
         // Arrange
         var services = new ServiceCollection();
@@ -128,7 +128,7 @@ public class ConfigurationBindingTests
             .Build();
 
         // Act
-        services.AddXbimBlazorPlatformConnected(configuration);
+        services.AddWexBlazorPlatformConnected(configuration);
         var provider = services.BuildServiceProvider();
         var serverOptions = provider.GetService<XbimServerOptions>();
 
@@ -140,7 +140,7 @@ public class ConfigurationBindingTests
     }
 
     [Fact]
-    public void AddXbimBlazorPlatformConnected_WithConfiguration_RegistersServerServices()
+    public void AddWexBlazorPlatformConnected_WithConfiguration_RegistersServerServices()
     {
         // Arrange
         var services = new ServiceCollection();
@@ -152,7 +152,7 @@ public class ConfigurationBindingTests
             .Build();
 
         // Act
-        services.AddXbimBlazorPlatformConnected(configuration);
+        services.AddWexBlazorPlatformConnected(configuration);
 
         // Assert
         Assert.Contains(services, d => d.ServiceType == typeof(IWorkspacesService));
@@ -162,7 +162,7 @@ public class ConfigurationBindingTests
     }
 
     [Fact]
-    public void AddXbimBlazorPlatformConnected_WithMissingBaseUrl_ThrowsInvalidOperationException()
+    public void AddWexBlazorPlatformConnected_WithMissingBaseUrl_ThrowsInvalidOperationException()
     {
         // Arrange
         var services = new ServiceCollection();
@@ -176,13 +176,13 @@ public class ConfigurationBindingTests
 
         // Act & Assert
         var ex = Assert.Throws<InvalidOperationException>(() =>
-            services.AddXbimBlazorPlatformConnected(configuration));
+            services.AddWexBlazorPlatformConnected(configuration));
         Assert.Contains("BaseUrl", ex.Message);
         Assert.Contains("required", ex.Message);
     }
 
     [Fact]
-    public void AddXbimBlazorPlatformConnected_WithInvalidBaseUrl_ThrowsInvalidOperationException()
+    public void AddWexBlazorPlatformConnected_WithInvalidBaseUrl_ThrowsInvalidOperationException()
     {
         // Arrange
         var services = new ServiceCollection();
@@ -195,7 +195,7 @@ public class ConfigurationBindingTests
 
         // Act & Assert
         var ex = Assert.Throws<InvalidOperationException>(() =>
-            services.AddXbimBlazorPlatformConnected(configuration));
+            services.AddWexBlazorPlatformConnected(configuration));
         Assert.Contains("valid HTTP or HTTPS URL", ex.Message);
     }
 

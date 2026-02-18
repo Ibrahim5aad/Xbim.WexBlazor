@@ -45,7 +45,7 @@ Register services for standalone operation (no server required):
 
 ```csharp
 // Program.cs
-builder.Services.AddXbimBlazorStandalone();
+builder.Services.AddWexBlazorStandalone();
 ```
 
 Add to `_Imports.razor`:
@@ -78,11 +78,11 @@ Register services with Xbim Server connection:
 
 ```csharp
 // Program.cs
-builder.Services.AddXbimClient(options =>
+builder.Services.AddWexServerClient(options =>
 {
     options.BaseUrl = "https://your-Xbim-server.com";
 });
-builder.Services.AddXbimBlazorPlatform();
+builder.Services.AddWexBlazorPlatform();
 ```
 
 Platform mode enables:
@@ -272,13 +272,13 @@ if (result.Success)
 For viewer applications without a backend server:
 
 ```csharp
-builder.Services.AddXbimBlazorStandalone();
+builder.Services.AddWexBlazorStandalone();
 ```
 
 With configuration:
 
 ```csharp
-builder.Services.AddXbimBlazorStandalone(options =>
+builder.Services.AddWexBlazorStandalone(options =>
 {
     options.DefaultTheme = ViewerTheme.Dark;
 });
@@ -289,11 +289,11 @@ builder.Services.AddXbimBlazorStandalone(options =>
 For applications connected to Xbim WexServer:
 
 ```csharp
-builder.Services.AddXbimClient(options =>
+builder.Services.AddWexServerClient(options =>
 {
     options.BaseUrl = "https://your-server.com";
 });
-builder.Services.AddXbimBlazorPlatform();
+builder.Services.AddWexBlazorPlatform();
 ```
 
 Platform mode automatically configures property sources to fetch from the server and enables cloud-based model loading.
