@@ -265,42 +265,10 @@ if (result.Success)
 }
 ```
 
-## Service Registration
-
-### Standalone Mode
-
-For viewer applications without a backend server:
-
-```csharp
-builder.Services.AddWexBlazorStandalone();
-```
-
-With configuration:
-
-```csharp
-builder.Services.AddWexBlazorStandalone(options =>
-{
-    options.DefaultTheme = ViewerTheme.Dark;
-});
-```
-
-### Platform Mode
-
-For applications connected to Xbim WexServer:
-
-```csharp
-builder.Services.AddWexServerClient(options =>
-{
-    options.BaseUrl = "https://your-server.com";
-});
-builder.Services.AddWexBlazorPlatform();
-```
-
-Platform mode automatically configures property sources to fetch from the server and enables cloud-based model loading.
-
 ## Requirements
 
 - .NET 9.0+
+- Node.js 20+ (for TypeScript compilation)
 - Blazor WebAssembly or Blazor Server
 
 ## License
