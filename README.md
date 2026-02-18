@@ -21,8 +21,8 @@ This library supports two modes to fit different application needs:
 
 | Mode | Description | Best For |
 |------|-------------|----------|
-| **Standalone** | Self-contained viewer with no backend dependencies | Demos, embedded viewers, simple apps, prototypes |
-| **Platform** | Integrated with Xbim Server for full model management | Production apps, team collaboration, cloud storage |
+| **Standalone** | Self-contained viewer with no backend dependencies | SPAs, embedded viewers, prototypes |
+| **Platform** | Integrated with Xbim WexServer for full model management | Server apps, team collaboration, cloud storage |
 
 ## Installation
 
@@ -286,7 +286,7 @@ builder.Services.AddXbimBlazorStandalone(options =>
 
 ### Platform Mode
 
-For applications connected to Xbim Server:
+For applications connected to Xbim WexServer:
 
 ```csharp
 builder.Services.AddXbimClient(options =>
