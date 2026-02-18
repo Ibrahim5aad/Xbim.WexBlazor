@@ -7,7 +7,7 @@ using Xbim.WexBlazor.Services.Abstractions;
 using Xbim.WexBlazor.Services.Abstractions.Server;
 using Xbim.WexBlazor.Services.Server;
 using Xbim.WexBlazor.Services.Server.Guards;
-using Xbim.Api.Client;
+using Xbim.Server.Client;
 
 namespace Xbim.WexBlazor;
 

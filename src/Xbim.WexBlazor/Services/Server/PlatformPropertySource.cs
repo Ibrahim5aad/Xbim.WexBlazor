@@ -1,6 +1,6 @@
 ﻿using System.Collections.Concurrent;
 using Xbim.WexBlazor.Models;
-using Xbim.Api.Client;
+using Xbim.Server.Client;
 
 namespace Xbim.WexBlazor.Services.Server;
 

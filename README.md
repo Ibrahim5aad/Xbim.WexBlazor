@@ -39,7 +39,7 @@ dotnet add package Xbim.WexBlazor
 For platform mode, also install the API client:
 
 ```bash
-dotnet add package Xbim.Api.Client
+dotnet add package Xbim.Server.Client
 ```
 
 ## Quick Start
@@ -314,4 +314,4 @@ MIT
 
 ## Related Packages
 
-- [Xbim.Api.Client](https://github.com/Ibrahim5aad/Xbim/pkgs/nuget/Xbim.Api.Client) - API client for Xbim Server
+- [Xbim.Server.Client](https://github.com/Ibrahim5aad/Xbim/pkgs/nuget/Xbim.Server.Client) - API client for Xbim Server

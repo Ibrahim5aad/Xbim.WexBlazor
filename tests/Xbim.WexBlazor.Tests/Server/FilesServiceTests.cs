@@ -1,7 +1,7 @@
 ﻿using Moq;
 using Xbim.WexBlazor.Services.Abstractions.Server;
 using Xbim.WexBlazor.Services.Server;
-using Xbim.Api.Client;
+using Xbim.Server.Client;
 
 namespace Xbim.WexBlazor.Tests.Server;
 

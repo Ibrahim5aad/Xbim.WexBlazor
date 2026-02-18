@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using Xbim.WexBlazor.Services.Abstractions.Server;
-using Xbim.Api.Client;
+using Xbim.Server.Client;
 
 namespace Xbim.WexBlazor.Services.Server;
 

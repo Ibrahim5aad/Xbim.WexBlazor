@@ -40,7 +40,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Xbim.Api.Client" Version="1.7.0" />
+    <PackageReference Include="Xbim.Server.Client" Version="1.7.0" />
     <PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="9.0.1" />
     <PackageReference Include="Microsoft.TypeScript.MSBuild" Version="5.4.3">
       <PrivateAssets>all</PrivateAssets>

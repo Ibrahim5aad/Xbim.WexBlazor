@@ -1,4 +1,4 @@
-﻿using Xbim.Api.Client;
+﻿using Xbim.Server.Client;
 
 namespace Xbim.WexBlazor.Services.Server;
 
