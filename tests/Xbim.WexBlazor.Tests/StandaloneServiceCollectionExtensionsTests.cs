@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection;
 using Xbim.WexBlazor.Models;
 using Xbim.WexBlazor.Services;
 using Xbim.WexBlazor.Services.Abstractions;
@@ -301,7 +301,7 @@ public class StandaloneServiceCollectionExtensionsTests
         services.AddXbimBlazorServer();
         var provider = services.BuildServiceProvider();
 
-        // Assert - Server mode (IFC processing) is still standalone (not connected to Xbim.Server API)
+        // Assert - Server mode (IFC processing) is still standalone (not connected to Xbim.WexServer API)
         var hostingModeProvider = provider.GetRequiredService<IXbimHostingModeProvider>();
         Assert.Equal(XbimHostingMode.Standalone, hostingModeProvider.HostingMode);
         Assert.True(hostingModeProvider.IsStandalone);

@@ -1,11 +1,11 @@
-﻿using Xbim.Server.Client;
+using Xbim.WexServer.Client;
 
 namespace Xbim.WexBlazor.Services.Abstractions.Server;
 
 /// <summary>
 /// Service interface for workspace operations.
 /// <para>
-/// Requires Xbim.Server connectivity. Implementations typically wrap the generated
+/// Requires Xbim.WexServer connectivity. Implementations typically wrap the generated
 /// <see cref="IXbimApiClient"/> to provide a higher-level API.
 /// </para>
 /// </summary>

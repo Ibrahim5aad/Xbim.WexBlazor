@@ -1,5 +1,5 @@
-﻿using Xbim.WexBlazor.Services.Server;
-using Xbim.Server.Client;
+using Xbim.WexBlazor.Services.Server;
+using Xbim.WexServer.Client;
 
 namespace Xbim.WexBlazor.Tests.Server;
 

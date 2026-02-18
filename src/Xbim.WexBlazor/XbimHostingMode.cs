@@ -1,4 +1,4 @@
-﻿namespace Xbim.WexBlazor;
+namespace Xbim.WexBlazor;
 
 /// <summary>
 /// Indicates the current Xbim.WexBlazor hosting mode.
@@ -7,7 +7,7 @@ public enum XbimHostingMode
 {
     /// <summary>
     /// Standalone viewer mode. Suitable for loading WexBIM from local files, static assets, or URLs
-    /// without Xbim.Server connectivity.
+    /// without Xbim.WexServer connectivity.
     /// <para>
     /// In this mode, the <c>FileLoaderPanel</c> component is available for loading models.
     /// </para>
@@ -15,7 +15,7 @@ public enum XbimHostingMode
     Standalone,
 
     /// <summary>
-    /// Platform-connected mode. Connected to Xbim.Server for full workspace, project,
+    /// Platform-connected mode. Connected to Xbim.WexServer for full workspace, project,
     /// file, and model management functionality.
     /// <para>
     /// In this mode, models are loaded through the workspace/project/model navigation

@@ -1,4 +1,4 @@
-﻿using Xbim.WexBlazor.Models;
+using Xbim.WexBlazor.Models;
 
 namespace Xbim.WexBlazor;
 
@@ -134,7 +134,7 @@ public class DemoModelConfig
 }
 
 /// <summary>
-/// Configuration options for Xbim.Server connectivity in PlatformConnected mode.
+/// Configuration options for Xbim.WexServer connectivity in PlatformConnected mode.
 /// <para>
 /// Bind this from the "Xbim:Server" configuration section.
 /// </para>
@@ -147,7 +147,7 @@ public class XbimServerOptions
     public const string SectionName = "Xbim:Server";
 
     /// <summary>
-    /// Gets or sets the base URL of the Xbim.Server API.
+    /// Gets or sets the base URL of the Xbim.WexServer API.
     /// <para>
     /// Required for PlatformConnected mode. Example: "https://api.Xbim.example.com"
     /// </para>
@@ -176,7 +176,7 @@ public class XbimServerOptions
         if (string.IsNullOrWhiteSpace(BaseUrl))
         {
             throw new InvalidOperationException(
-                $"Xbim.Server configuration is invalid: 'BaseUrl' is required. " +
+                $"Xbim.WexServer configuration is invalid: 'BaseUrl' is required. " +
                 $"Configure the '{SectionName}:BaseUrl' setting in appsettings.json or call " +
                 $"AddXbimBlazorPlatformConnected(baseUrl) with a valid URL.");
         }
@@ -185,7 +185,7 @@ public class XbimServerOptions
             (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
         {
             throw new InvalidOperationException(
-                $"Xbim.Server configuration is invalid: 'BaseUrl' must be a valid HTTP or HTTPS URL. " +
+                $"Xbim.WexServer configuration is invalid: 'BaseUrl' must be a valid HTTP or HTTPS URL. " +
                 $"Current value: '{BaseUrl}'. " +
                 $"Example: \"https://api.Xbim.example.com\"");
         }

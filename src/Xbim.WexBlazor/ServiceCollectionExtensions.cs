@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Xbim.WexBlazor.Models;
@@ -7,7 +7,7 @@ using Xbim.WexBlazor.Services.Abstractions;
 using Xbim.WexBlazor.Services.Abstractions.Server;
 using Xbim.WexBlazor.Services.Server;
 using Xbim.WexBlazor.Services.Server.Guards;
-using Xbim.Server.Client;
+using Xbim.WexServer.Client;
 
 namespace Xbim.WexBlazor;
 
@@ -22,7 +22,7 @@ public static class ServiceCollectionExtensions
     /// This registration is suitable for applications that:
     /// <list type="bullet">
     ///   <item>Load WexBIM files via FileLoaderPanel (from URLs, static assets, or local files)</item>
-    ///   <item>Do not require Xbim.Server connectivity</item>
+    ///   <item>Do not require Xbim.WexServer connectivity</item>
     ///   <item>Do not need IFC file processing (use pre-converted WexBIM files)</item>
     /// </list>
     /// </para>
@@ -48,7 +48,7 @@ public static class ServiceCollectionExtensions
     /// This registration is suitable for applications that:
     /// <list type="bullet">
     ///   <item>Load WexBIM files via FileLoaderPanel (from URLs, static assets, or local files)</item>
-    ///   <item>Do not require Xbim.Server connectivity</item>
+    ///   <item>Do not require Xbim.WexServer connectivity</item>
     ///   <item>Do not need IFC file processing (use pre-converted WexBIM files)</item>
     /// </list>
     /// </para>
@@ -281,7 +281,7 @@ public static class ServiceCollectionExtensions
     /// <para>
     /// <strong>Prerequisites:</strong>
     /// <list type="bullet">
-    ///   <item>A running Xbim.Server instance</item>
+    ///   <item>A running Xbim.WexServer instance</item>
     ///   <item>Valid base URL configuration</item>
     ///   <item>Optional: Authentication token provider for secured endpoints</item>
     /// </list>

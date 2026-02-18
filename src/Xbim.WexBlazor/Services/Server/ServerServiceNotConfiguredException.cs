@@ -1,4 +1,4 @@
-﻿namespace Xbim.WexBlazor.Services.Server;
+namespace Xbim.WexBlazor.Services.Server;
 
 /// <summary>
 /// Exception thrown when a server-only service is used without proper server configuration.
@@ -12,7 +12,7 @@
 public class ServerServiceNotConfiguredException : InvalidOperationException
 {
     private const string DefaultMessageTemplate =
-        "The service '{0}' requires Xbim.Server connectivity, but the application is configured in standalone mode. " +
+        "The service '{0}' requires Xbim.WexServer connectivity, but the application is configured in standalone mode. " +
         "To use server-backed services, call 'AddXbimBlazorPlatformConnected(baseUrl)' instead of 'AddXbimBlazorStandalone()' " +
         "during service registration.";
 

@@ -1,7 +1,7 @@
-﻿using System.Collections.Concurrent;
+using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
 using Xbim.WexBlazor.Services.Abstractions.Server;
-using Xbim.Server.Client;
+using Xbim.WexServer.Client;
 
 namespace Xbim.WexBlazor.Services.Server;
 

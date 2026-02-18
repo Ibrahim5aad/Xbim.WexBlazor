@@ -1,8 +1,8 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection;
 using Xbim.WexBlazor.Services.Abstractions.Server;
 using Xbim.WexBlazor.Services.Server;
 using Xbim.WexBlazor.Services.Server.Guards;
-using Xbim.Server.Client;
+using Xbim.WexServer.Client;
 
 namespace Xbim.WexBlazor.Tests.Server;
 

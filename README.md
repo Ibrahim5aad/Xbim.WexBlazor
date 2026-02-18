@@ -1,4 +1,4 @@
-﻿# Xbim.WexBlazor
+# Xbim.WexBlazor
 
 [![GitHub Packages](https://img.shields.io/badge/GitHub%20Packages-Xbim.WexBlazor-blue)](https://github.com/Ibrahim5aad/Xbim/pkgs/nuget/Xbim.WexBlazor)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -39,7 +39,7 @@ dotnet add package Xbim.WexBlazor
 For platform mode, also install the API client:
 
 ```bash
-dotnet add package Xbim.Server.Client
+dotnet add package Xbim.WexServer.Client
 ```
 
 ## Quick Start
@@ -314,4 +314,4 @@ MIT
 
 ## Related Packages
 
-- [Xbim.Server.Client](https://github.com/Ibrahim5aad/Xbim/pkgs/nuget/Xbim.Server.Client) - API client for Xbim Server
+- [Xbim.WexServer.Client](https://github.com/Ibrahim5aad/Xbim/pkgs/nuget/Xbim.WexServer.Client) - API client for Xbim Server
