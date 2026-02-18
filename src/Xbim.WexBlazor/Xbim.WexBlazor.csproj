@@ -9,7 +9,7 @@
     <PackageId>Xbim.WexBlazor</PackageId>
     <RootNamespace>Xbim.WexBlazor</RootNamespace>
     <AssemblyName>Xbim.WexBlazor</AssemblyName>
-    <Version>1.0.0</Version>
+    <Version>1.7.1</Version>
     <Authors>Ibrahim Saad</Authors>
     <Company>Ibrahim Saad</Company>
     <Description>A Blazor wrapper for the xBIM Viewer, providing seamless integration of 3D BIM model visualization in Blazor WebAssembly applications. Includes model management, toolbar system, and plugin support.</Description>
