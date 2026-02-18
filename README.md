@@ -1,6 +1,6 @@
 # Xbim.WexBlazor
 
-[![GitHub Packages](https://img.shields.io/badge/GitHub%20Packages-Xbim.WexBlazor-blue)](https://github.com/Ibrahim5aad/Xbim/pkgs/nuget/Xbim.WexBlazor)
+[![NuGet](https://img.shields.io/nuget/v/Xbim.WexBlazor)](https://www.nuget.org/packages/Xbim.WexBlazor)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 A Blazor component library for building BIM (Building Information Modeling) applications. Wraps the [@xbim/viewer](https://www.npmjs.com/package/@xbim/viewer) JavaScript library for 3D model visualization in Blazor WebAssembly or Server applications.
@@ -28,13 +28,8 @@ This library supports two modes to fit different application needs:
 
 ```bash
 # Add GitHub Packages source (one-time setup)
-dotnet nuget add source https://nuget.pkg.github.com/Ibrahim5aad/index.json --name github --username YOUR_GITHUB_USERNAME --password YOUR_GITHUB_PAT
-
-# Install the package
 dotnet add package Xbim.WexBlazor
 ```
-
-> **Note:** The `YOUR_GITHUB_PAT` needs `read:packages` scope. [Create a PAT here](https://github.com/settings/tokens).
 
 For platform mode, also install the API client:
 
@@ -314,4 +309,4 @@ MIT
 
 ## Related Packages
 
-- [Xbim.WexServer.Client](https://github.com/Ibrahim5aad/Xbim/pkgs/nuget/Xbim.WexServer.Client) - API client for Xbim Server
+- [Xbim.WexServer.Client](https://www.nuget.org/packages/Xbim.WexServer.Client) - API client for Xbim WexServer
