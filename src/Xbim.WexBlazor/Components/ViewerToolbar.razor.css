@@ -1,0 +1,283 @@
+﻿.Xbim-toolbar {
+    position: absolute;
+    display: flex;
+    gap: 4px;
+    padding: 8px;
+    background: var(--Xbim-bg-secondary);
+    border-radius: 6px;
+    box-shadow: var(--Xbim-shadow-md);
+    border: 1px solid var(--Xbim-border-primary);
+    z-index: 1000;
+    transition: all 0.2s ease;
+}
+
+.Xbim-toolbar-top {
+    top: 12px;
+    flex-direction: row;
+}
+
+.Xbim-toolbar-bottom {
+    bottom: 12px;
+    flex-direction: row;
+}
+
+.Xbim-toolbar-left {
+    left: 12px;
+    flex-direction: column;
+}
+
+.Xbim-toolbar-right {
+    right: 12px;
+    flex-direction: column;
+}
+
+.Xbim-toolbar-top.Xbim-toolbar-start,
+.Xbim-toolbar-bottom.Xbim-toolbar-start {
+    left: 12px;
+}
+
+.Xbim-toolbar-top.Xbim-toolbar-center,
+.Xbim-toolbar-bottom.Xbim-toolbar-center {
+    left: calc(50% + var(--sidebar-left-offset, 0px) + var(--sidebar-right-offset, 0px));
+    transform: translateX(-50%);
+}
+
+.Xbim-toolbar-top.Xbim-toolbar-end,
+.Xbim-toolbar-bottom.Xbim-toolbar-end {
+    right: 12px;
+}
+
+.Xbim-toolbar-left.Xbim-toolbar-start,
+.Xbim-toolbar-right.Xbim-toolbar-start {
+    top: 12px;
+}
+
+.Xbim-toolbar-left.Xbim-toolbar-center,
+.Xbim-toolbar-right.Xbim-toolbar-center {
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.Xbim-toolbar-left.Xbim-toolbar-end,
+.Xbim-toolbar-right.Xbim-toolbar-end {
+    bottom: 12px;
+}
+
+.Xbim-toolbar-btn {
+    margin: auto 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 36px;
+    height: 36px;
+    padding: 8px;
+    background: var(--Xbim-bg-primary);
+    border: 1px solid var(--Xbim-border-primary);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: var(--Xbim-text-primary);
+    font-size: 16px;
+}
+
+.Xbim-toolbar-btn:hover:not(.disabled) {
+    background: var(--Xbim-bg-hover);
+    border-color: var(--Xbim-border-hover);
+    color: var(--Xbim-accent-primary);
+    transform: translateY(-1px);
+    box-shadow: var(--Xbim-shadow-sm);
+}
+
+.Xbim-toolbar-btn:active:not(.disabled) {
+    transform: translateY(0);
+    box-shadow: none;
+}
+
+.Xbim-toolbar-btn.disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.Xbim-toolbar-toggle.active {
+    background: var(--Xbim-accent-primary);
+    border-color: var(--Xbim-accent-primary);
+    color: white;
+}
+
+.Xbim-toolbar-toggle.active:hover {
+    background: var(--Xbim-accent-primary-hover);
+    border-color: var(--Xbim-accent-primary-hover);
+}
+
+.Xbim-toolbar-radio-btn.selected {
+    background: var(--Xbim-accent-primary);
+    border-color: var(--Xbim-accent-primary);
+    color: white;
+}
+
+.Xbim-toolbar-radio-btn.selected:hover:not(.disabled) {
+    background: var(--Xbim-accent-primary-hover);
+    border-color: var(--Xbim-accent-primary-hover);
+    transform: translateY(-1px);
+}
+
+.Xbim-toolbar-dropdown {
+    position: relative;
+    height: fit-content;
+    margin: auto;
+}
+
+.Xbim-toolbar-dropdown-toggle {
+    gap: 4px;
+    padding-left: 12px;
+    padding-right: 12px;
+}
+
+.Xbim-toolbar-label {
+    font-size: 14px;
+    font-weight: 500;
+    white-space: nowrap;
+    margin: 0 4px;
+}
+
+.Xbim-toolbar-dropdown-menu {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    min-width: 180px;
+    background: var(--Xbim-bg-primary);
+    border: 1px solid var(--Xbim-border-primary);
+    border-radius: 6px;
+    box-shadow: var(--Xbim-shadow-lg);
+    padding: 4px;
+    display: none;
+    z-index: 1001;
+}
+
+.Xbim-toolbar-dropdown-menu.show {
+    display: block;
+}
+
+.Xbim-toolbar-dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 8px 12px;
+    background: transparent;
+    border: none;
+    border-radius: 4px;
+    text-align: left;
+    cursor: pointer;
+    transition: background 0.2s ease;
+    color: var(--Xbim-text-primary);
+    font-size: 14px;
+}
+
+.Xbim-toolbar-dropdown-item:hover:not(.disabled) {
+    background: var(--Xbim-bg-hover);
+}
+
+.Xbim-toolbar-dropdown-item.disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.Xbim-toolbar-top .Xbim-toolbar-dropdown-menu {
+    top: calc(100% + 4px);
+    bottom: auto;
+}
+
+.Xbim-toolbar-bottom .Xbim-toolbar-dropdown-menu {
+    bottom: calc(100% + 4px);
+    top: auto;
+}
+
+.Xbim-toolbar-left .Xbim-toolbar-dropdown-menu {
+    left: calc(100% + 4px);
+    right: auto;
+    top: 0;
+    bottom: auto;
+}
+
+.Xbim-toolbar-right .Xbim-toolbar-dropdown-menu {
+    right: calc(100% + 4px);
+    left: auto;
+    top: 0;
+    bottom: auto;
+}
+
+.Xbim-toolbar-group {
+    display: flex;
+    gap: 2px;
+    background: var(--Xbim-accent-primary-bg);
+    border: 1px solid var(--Xbim-accent-primary-bg);
+    border-radius: 6px;
+    position: relative;
+}
+
+.Xbim-toolbar-top .Xbim-toolbar-group::before,
+.Xbim-toolbar-bottom .Xbim-toolbar-group::before,
+.Xbim-toolbar-left .Xbim-toolbar-group::before,
+.Xbim-toolbar-right .Xbim-toolbar-group::before {
+    top: -1px;
+    left: -1px;
+    height: 1px;
+    width: calc(50% - 7ch);
+}
+
+.Xbim-toolbar-top .Xbim-toolbar-group::after,
+.Xbim-toolbar-bottom .Xbim-toolbar-group::after,
+.Xbim-toolbar-left .Xbim-toolbar-group::after,
+.Xbim-toolbar-right .Xbim-toolbar-group::after {
+    top: -1px;
+    left: calc(50% + 7ch);
+    right: -1px;
+    height: 1px;
+}
+
+.Xbim-toolbar-group-label {
+    position: absolute;
+    top: -4px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 0;
+    font-size: 9px;
+    font-weight: 600;
+    color: var(--Xbim-accent-primary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.Xbim-toolbar-group-items {
+    display: flex;
+    gap: 2px;
+}
+
+.Xbim-toolbar-top .Xbim-toolbar-group,
+.Xbim-toolbar-bottom .Xbim-toolbar-group {
+    flex-direction: row;
+    padding: 4px;
+    border-top: none;
+}
+
+.Xbim-toolbar-top .Xbim-toolbar-group-items,
+.Xbim-toolbar-bottom .Xbim-toolbar-group-items {
+    flex-direction: row;
+}
+
+.Xbim-toolbar-left .Xbim-toolbar-group,
+.Xbim-toolbar-right .Xbim-toolbar-group {
+    flex-direction: column;
+    padding: 10px 4px 4px 4px;
+    border-top: none;
+}
+
+.Xbim-toolbar-left .Xbim-toolbar-group-items,
+.Xbim-toolbar-right .Xbim-toolbar-group-items {
+    flex-direction: column;
+}
+
+.Xbim-toolbar-group .Xbim-toolbar-btn {
+    margin: 0;
+}

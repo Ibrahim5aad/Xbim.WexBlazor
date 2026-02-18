@@ -1,0 +1,32 @@
+## .NET / C#
+bin/
+obj/
+*.user
+*.suo
+.vs/
+.idea/
+*.DotSettings.user
+
+## NuGet
+*.nupkg
+*.snupkg
+packages/
+nuget.config
+
+## Node / TypeScript
+node_modules/
+npm-debug.log
+yarn-error.log
+
+## Build outputs
+*.dll
+*.pdb
+*.exe
+TestResults/
+
+## Rider
+.idea/
+
+## OS
+.DS_Store
+Thumbs.db

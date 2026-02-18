@@ -1,0 +1,920 @@
+﻿@using Microsoft.JSInterop
+@using System.Text.Json
+@using Xbim.WexBlazor.Interop
+@using Xbim.WexBlazor.Models
+@implements IAsyncDisposable
+
+@inject IJSRuntime JSRuntime
+
+<CascadingValue Value="this" IsFixed="false">
+    <div @ref="_containerRef" class="Xbim-viewer-container" style="@ComputedContainerStyle">
+        <div class="Xbim-canvas-wrapper">
+            <canvas id="@Id"></canvas>
+        </div>
+        @ChildContent
+    </div>
+</CascadingValue>
+
+@code {
+    private XbimViewerInterop? _viewer;
+    private string? _viewerId;
+    private bool _isInteractive = false;
+    private bool _viewerInitialized = false;
+    private bool _modelLoaded = false;
+    private DotNetObjectReference<XbimViewer>? _dotNetRef;
+    private readonly Dictionary<int, LoadedModel> _loadedModels = new();
+    private readonly Dictionary<string, ViewerPlugin> _plugins = new();
+    private readonly HashSet<(int ElementId, int ModelId)> _highlightedElements = new();
+    private ElementReference _containerRef;
+
+    public int[] HighlightedElementIds => _highlightedElements.Select(e => e.ElementId).ToArray();
+    public IReadOnlyCollection<(int ElementId, int ModelId)> HighlightedElements => _highlightedElements;
+    public bool HasHighlightedElements => _highlightedElements.Count > 0;
+
+    public event Action? SelectionChanged;
+
+    private string ComputedContainerStyle
+    {
+        get
+        {
+            var style = ContainerStyle ?? "position: relative;";
+            if (!style.Contains("width", StringComparison.OrdinalIgnoreCase) && !string.IsNullOrEmpty(Width))
+            {
+                style += $" width: {Width};";
+            }
+            if (!style.Contains("height", StringComparison.OrdinalIgnoreCase) && !string.IsNullOrEmpty(Height))
+            {
+                style += $" height: {Height};";
+            }
+            return style;
+        }
+    }
+    
+    /// <summary>
+    /// Unique ID for the viewer canvas
+    /// </summary>
+    [Parameter]
+    public string Id { get; set; } = Guid.NewGuid().ToString("N");
+
+    /// <summary>
+    /// URL to the wexBIM model file to load
+    /// </summary>
+    [Parameter]
+    public string? ModelUrl { get; set; }
+
+    /// <summary>
+    /// Width of the canvas (default: 800px)
+    /// </summary>
+    [Parameter]
+    public string Width { get; set; } = "800";
+
+    /// <summary>
+    /// Height of the canvas (default: 600px)
+    /// </summary>
+    [Parameter]
+    public string Height { get; set; } = "600";
+
+    /// <summary>
+    /// Background color of the viewer
+    /// </summary>
+    [Parameter]
+    public string BackgroundColor { get; set; } = "#F5F5F5";
+
+    /// <summary>
+    /// Container style CSS
+    /// </summary>
+    [Parameter]
+    public string ContainerStyle { get; set; } = "position: relative;";
+
+
+    /// <summary>
+    /// Event raised when the viewer is initialized
+    /// </summary>
+    [Parameter]
+    public EventCallback<string> OnViewerInitialized { get; set; }
+
+    /// <summary>
+    /// Event raised when a model is loaded
+    /// </summary>
+    [Parameter]
+    public EventCallback<bool> OnModelLoaded { get; set; }
+
+    /// <summary>
+    /// When true, automatically toggles highlight on picked elements (default: true)
+    /// </summary>
+    [Parameter]
+    public bool AutoToggleHighlight { get; set; } = true;
+
+    /// <summary>
+    /// Event raised when an element is clicked (pick event)
+    /// </summary>
+    [Parameter]
+    public EventCallback<ViewerEventArgs> OnPick { get; set; }
+
+    /// <summary>
+    /// Event raised when mouse hovers over an element
+    /// </summary>
+    [Parameter]
+    public EventCallback<ViewerEventArgs> OnHoverPick { get; set; }
+
+    /// <summary>
+    /// Event raised on canvas click
+    /// </summary>
+    [Parameter]
+    public EventCallback<ViewerEventArgs> OnClick { get; set; }
+
+    /// <summary>
+    /// Event raised on canvas double-click
+    /// </summary>
+    [Parameter]
+    public EventCallback<ViewerEventArgs> OnDoubleClick { get; set; }
+
+    /// <summary>
+    /// Event raised when an error occurs
+    /// </summary>
+    [Parameter]
+    public EventCallback<ViewerEventArgs> OnError { get; set; }
+
+    /// <summary>
+    /// Event raised when a model is loaded
+    /// </summary>
+    [Parameter]
+    public EventCallback<ViewerEventArgs> OnLoaded { get; set; }
+
+    /// <summary>
+    /// Child content (e.g., toolbars)
+    /// </summary>
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    /// <summary>
+    /// Event raised when models change (loaded, unloaded, started, stopped)
+    /// </summary>
+    [Parameter]
+    public EventCallback<ModelChangedEventArgs> OnModelChanged { get; set; }
+
+    /// <summary>
+    /// C# event for child component subscriptions to model changes.
+    /// Mirrors OnModelChanged EventCallback.
+    /// </summary>
+    public event Action<ModelChangedEventArgs>? ModelChanged;
+
+    /// <summary>
+    /// C# event for child component subscriptions to element picks.
+    /// Mirrors OnPick EventCallback.
+    /// </summary>
+    public event Action<ViewerEventArgs>? Pick;
+
+    /// <summary>
+    /// Initialize the viewer and load the model when the component is rendered
+    /// </summary>
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _isInteractive = true;
+            await InitializeViewerIfNeededAsync();
+        }
+    }
+
+    /// <summary>
+    /// Initializes the xBIM viewer
+    /// </summary>
+    private async Task InitializeViewerIfNeededAsync()
+    {
+        if (_viewerInitialized)
+            return;
+
+        if (!_isInteractive)
+            return;
+
+        _viewer = new XbimViewerInterop(JSRuntime);
+        await _viewer.InitializeAsync();
+
+        _dotNetRef = DotNetObjectReference.Create(this);
+
+        _viewerId = await _viewer.InitViewerAsync(Id);
+        
+        if (!string.IsNullOrEmpty(_viewerId))
+        {
+            _viewerInitialized = true;
+            
+            await _viewer.SetBackgroundColorAsync(_viewerId, BackgroundColor);
+            
+            await RegisterEventHandlersAsync();
+            
+            await OnViewerInitialized.InvokeAsync(_viewerId);
+            
+            if (!string.IsNullOrEmpty(ModelUrl))
+            {
+                await LoadModelAsync(ModelUrl);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Registers event handlers with the viewer
+    /// </summary>
+    private async Task RegisterEventHandlersAsync()
+    {
+        if (_viewer == null || string.IsNullOrEmpty(_viewerId) || _dotNetRef == null)
+            return;
+
+        if (OnLoaded.HasDelegate)
+            await _viewer.AddEventListenerAsync(_viewerId, "loaded", _dotNetRef);
+
+        if (AutoToggleHighlight || OnPick.HasDelegate || Pick != null)
+            await _viewer.AddEventListenerAsync(_viewerId, "pick", _dotNetRef);
+
+        if (OnHoverPick.HasDelegate)
+            await _viewer.AddEventListenerAsync(_viewerId, "hoverpick", _dotNetRef);
+
+        if (OnClick.HasDelegate)
+            await _viewer.AddEventListenerAsync(_viewerId, "click", _dotNetRef);
+
+        if (OnDoubleClick.HasDelegate)
+            await _viewer.AddEventListenerAsync(_viewerId, "dblclick", _dotNetRef);
+
+        if (OnError.HasDelegate)
+            await _viewer.AddEventListenerAsync(_viewerId, "error", _dotNetRef);
+    }
+
+    /// <summary>
+    /// Callback method invoked by JavaScript when viewer events occur
+    /// </summary>
+    [JSInvokable]
+            public async Task OnViewerEvent(ViewerEventArgs eventArgs)
+    {
+        try
+        {
+            // Route to the appropriate event callback
+            switch (eventArgs.EventName)
+            {
+                case "loaded":
+                    if (OnLoaded.HasDelegate)
+                        await OnLoaded.InvokeAsync(eventArgs);
+                    break;
+
+                case "pick":
+                    if (AutoToggleHighlight && eventArgs.Id.HasValue)
+                    {
+                        var isHighlighted = await IsElementHighlightedAsync(eventArgs.Id.Value, eventArgs.Model);
+                        if (isHighlighted)
+                            await UnhighlightElementsAsync(new[] { eventArgs.Id.Value }, eventArgs.Model);
+                        else
+                            await HighlightElementsAsync(new[] { eventArgs.Id.Value }, eventArgs.Model);
+                    }
+                    Pick?.Invoke(eventArgs);
+                    if (OnPick.HasDelegate)
+                        await OnPick.InvokeAsync(eventArgs);
+                    break;
+
+                case "hoverpick":
+                    if (OnHoverPick.HasDelegate)
+                        await OnHoverPick.InvokeAsync(eventArgs);
+                    break;
+
+                case "click":
+                    if (OnClick.HasDelegate)
+                        await OnClick.InvokeAsync(eventArgs);
+                    break;
+
+                case "dblclick":
+                    if (OnDoubleClick.HasDelegate)
+                        await OnDoubleClick.InvokeAsync(eventArgs);
+                    break;
+
+                case "error":
+                    if (OnError.HasDelegate)
+                        await OnError.InvokeAsync(eventArgs);
+                    break;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error handling viewer event: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Loads a wexBIM model from the specified URL or blob URL
+    /// </summary>
+    public async Task<LoadedModel?> LoadModelAsync(string modelUrl, string? modelName = null, ModelSourceType sourceType = ModelSourceType.Url)
+    {
+        if (_viewer != null && !string.IsNullOrEmpty(_viewerId) && _viewerInitialized)
+        {
+            var modelId = await _viewer.LoadModelAsync(_viewerId, modelUrl);
+            
+            if (modelId.HasValue)
+            {
+                var loadedModel = new LoadedModel
+                {
+                    Id = modelId.Value,
+                    Name = modelName ?? Path.GetFileName(modelUrl),
+                    Source = modelUrl,
+                    SourceType = sourceType,
+                    BlobUrl = sourceType == ModelSourceType.Blob ? modelUrl : null,
+                    LoadedAt = DateTime.Now
+                };
+                
+                _loadedModels[modelId.Value] = loadedModel;
+                _modelLoaded = true;
+                
+                await _viewer.StartAsync(_viewerId);
+                await OnModelLoaded.InvokeAsync(true);
+                await RaiseModelChangedAsync(loadedModel, ModelChangeType.Loaded);
+                
+                return loadedModel;
+            }
+        }
+        
+        return null;
+    }
+
+    /// <summary>
+    /// Loads a wexBIM model from a byte array (creates blob URL internally)
+    /// </summary>
+    public async Task<LoadedModel?> LoadModelFromBytesAsync(byte[] modelData, string? fileName = null)
+    {
+        if (!_isInteractive || !_viewerInitialized || JSRuntime == null)
+            return null;
+
+        try
+        {
+            var blobUrl = await JSRuntime.InvokeAsync<string>("createBlobUrl", modelData, "application/octet-stream");
+            return await LoadModelAsync(blobUrl, fileName ?? "model.wexbim", ModelSourceType.LocalFile);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Gets all currently loaded models
+    /// </summary>
+    public IReadOnlyDictionary<int, LoadedModel> GetLoadedModels()
+    {
+        return _loadedModels;
+    }
+
+    /// <summary>
+    /// Unloads a specific model from the viewer
+    /// </summary>
+    public async Task<bool> UnloadModelAsync(int modelId)
+    {
+        if (_viewer == null || string.IsNullOrEmpty(_viewerId) || !_viewerInitialized)
+            return false;
+
+        var success = await _viewer.UnloadModelAsync(_viewerId, modelId);
+        
+        if (success && _loadedModels.TryGetValue(modelId, out var model))
+        {
+            // Revoke blob URL if it was created for a local file
+            if (!string.IsNullOrEmpty(model.BlobUrl))
+            {
+                try
+                {
+                    await JSRuntime.InvokeVoidAsync("URL.revokeObjectURL", model.BlobUrl);
+                }
+                catch { /* Ignore errors */ }
+            }
+            
+            _loadedModels.Remove(modelId);
+            await RaiseModelChangedAsync(model, ModelChangeType.Unloaded);
+            
+            // Update _modelLoaded flag
+            _modelLoaded = _loadedModels.Count > 0;
+            if (!_modelLoaded)
+            {
+                await OnModelLoaded.InvokeAsync(false);
+            }
+        }
+        
+        return success;
+    }
+
+    /// <summary>
+    /// Starts or stops a specific model (toggles rendering/visibility)
+    /// </summary>
+    public async Task<bool> SetModelStartedAsync(int modelId, bool started)
+    {
+        if (_viewer == null || string.IsNullOrEmpty(_viewerId) || !_viewerInitialized)
+            return false;
+
+        var success = await _viewer.SetModelVisibilityAsync(_viewerId, modelId, started);
+        
+        if (success && _loadedModels.TryGetValue(modelId, out var model))
+        {
+            model.IsStarted = started;
+            await RaiseModelChangedAsync(model, started ? ModelChangeType.Started : ModelChangeType.Stopped);
+        }
+        
+        return success;
+    }
+
+    /// <summary>
+    /// Toggles a model between started and stopped
+    /// </summary>
+    public async Task<bool> ToggleModelAsync(int modelId)
+    {
+        if (_loadedModels.TryGetValue(modelId, out var model))
+        {
+            return await SetModelStartedAsync(modelId, !model.IsStarted);
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// Unloads all models
+    /// </summary>
+    public async Task UnloadAllModelsAsync()
+    {
+        var modelIds = _loadedModels.Keys.ToList();
+        foreach (var modelId in modelIds)
+        {
+            await UnloadModelAsync(modelId);
+        }
+    }
+
+    /// <summary>
+    /// Raises the model changed event for both EventCallback and C# event subscribers
+    /// </summary>
+    private async Task RaiseModelChangedAsync(LoadedModel model, ModelChangeType changeType)
+    {
+        var args = new ModelChangedEventArgs(model, changeType, _loadedModels);
+        
+        ModelChanged?.Invoke(args);
+        
+        if (OnModelChanged.HasDelegate)
+        {
+            await OnModelChanged.InvokeAsync(args);
+        }
+    }
+
+    // Plugin Management
+
+    /// <summary>
+    /// Adds a plugin to the viewer
+    /// </summary>
+    public async Task<bool> AddPluginAsync(ViewerPlugin plugin)
+    {
+        if (_viewer == null || string.IsNullOrEmpty(_viewerId) || !_viewerInitialized)
+            return false;
+
+        var config = plugin.GetConfiguration();
+        var success = await _viewer.AddPluginAsync(_viewerId, plugin.Id, plugin.PluginType, config);
+        
+        if (success)
+        {
+            _plugins[plugin.Id] = plugin;
+        }
+        
+        return success;
+    }
+
+    /// <summary>
+    /// Removes a plugin from the viewer
+    /// </summary>
+    public async Task<bool> RemovePluginAsync(string pluginId)
+    {
+        if (_viewer == null || string.IsNullOrEmpty(_viewerId) || !_viewerInitialized)
+            return false;
+
+        var success = await _viewer.RemovePluginAsync(_viewerId, pluginId);
+        
+        if (success)
+        {
+            _plugins.Remove(pluginId);
+        }
+        
+        return success;
+    }
+
+    /// <summary>
+    /// Removes a plugin from the viewer by instance
+    /// </summary>
+    public async Task<bool> RemovePluginAsync(ViewerPlugin plugin)
+    {
+        return await RemovePluginAsync(plugin.Id);
+    }
+
+    /// <summary>
+    /// Sets whether a plugin is stopped (not rendering)
+    /// </summary>
+    public async Task<bool> SetPluginStoppedAsync(string pluginId, bool stopped)
+    {
+        if (_viewer == null || string.IsNullOrEmpty(_viewerId) || !_viewerInitialized)
+            return false;
+
+        var success = await _viewer.SetPluginStoppedAsync(_viewerId, pluginId, stopped);
+        
+        if (success && _plugins.TryGetValue(pluginId, out var plugin))
+        {
+            plugin.IsStopped = stopped;
+        }
+        
+        return success;
+    }
+
+    /// <summary>
+    /// Gets all active plugins
+    /// </summary>
+    public IReadOnlyDictionary<string, ViewerPlugin> GetPlugins()
+    {
+        return _plugins;
+    }
+
+    /// <summary>
+    /// Gets a plugin by ID
+    /// </summary>
+    public ViewerPlugin? GetPlugin(string pluginId)
+    {
+        return _plugins.TryGetValue(pluginId, out var plugin) ? plugin : null;
+    }
+
+    /// <summary>
+    /// Gets a plugin by type
+    /// </summary>
+    public T? GetPlugin<T>() where T : ViewerPlugin
+    {
+        return _plugins.Values.OfType<T>().FirstOrDefault();
+    }
+
+    /// <summary>
+    /// Removes the clipping plane from the viewer
+    /// </summary>
+    public async Task<bool> UnclipAsync()
+    {
+        if (_viewer != null && !string.IsNullOrEmpty(_viewerId) && _viewerInitialized)
+        {
+            return await _viewer.UnclipAsync(_viewerId);
+        }
+        
+        return false;
+    }
+
+    /// <summary>
+    /// Creates a section box around the model
+    /// </summary>
+    public async Task<bool> CreateSectionBoxAsync(string pluginId)
+    {
+        if (_viewer != null && !string.IsNullOrEmpty(_viewerId) && _viewerInitialized)
+        {
+            return await _viewer.CreateSectionBoxAsync(_viewerId, pluginId);
+        }
+        
+        return false;
+    }
+
+    /// <summary>
+    /// Clears the section box
+    /// </summary>
+    public async Task<bool> ClearSectionBoxAsync(string pluginId)
+    {
+        if (_viewer != null && !string.IsNullOrEmpty(_viewerId) && _viewerInitialized)
+        {
+            return await _viewer.ClearSectionBoxAsync(_viewerId, pluginId);
+        }
+        
+        return false;
+    }
+
+    /// <summary>
+    /// Sets the background color of the viewer
+    /// </summary>
+    public async Task<bool> SetBackgroundColorAsync(string color)
+    {
+        if (_viewer != null && !string.IsNullOrEmpty(_viewerId) && _viewerInitialized)
+        {
+            return await _viewer.SetBackgroundColorAsync(_viewerId, color);
+        }
+        
+        return false;
+    }
+
+    /// <summary>
+    /// Sets the highlighting (selection) color of the viewer
+    /// </summary>
+    /// <param name="color">CSS color string in hex format (e.g. "#FF0000" for red)</param>
+    /// <returns>True if successful</returns>
+    public async Task<bool> SetHighlightingColorAsync(string color)
+    {
+        if (_viewer != null && !string.IsNullOrEmpty(_viewerId) && _viewerInitialized)
+        {
+            return await _viewer.SetHighlightingColorAsync(_viewerId, color);
+        }
+        
+        return false;
+    }
+
+    /// <summary>
+    /// Sets the hover pick color of the viewer
+    /// </summary>
+    /// <param name="color">CSS color string in hex format (e.g. "#FF0000" for red)</param>
+    /// <returns>True if successful</returns>
+    public async Task<bool> SetHoverPickColorAsync(string color)
+    {
+        if (_viewer != null && !string.IsNullOrEmpty(_viewerId) && _viewerInitialized)
+        {
+            return await _viewer.SetHoverPickColorAsync(_viewerId, color);
+        }
+        
+        return false;
+    }
+
+    /// <summary>
+    /// Zooms to fit all elements in the view
+    /// </summary>
+    public async Task<bool> ZoomFitAsync()
+    {
+        if (_viewer != null && !string.IsNullOrEmpty(_viewerId) && _viewerInitialized && _modelLoaded)
+        {
+            return await _viewer.ZoomFitAsync(_viewerId);
+        }
+        
+        return false;
+    }
+
+    /// <summary>
+    /// Resets the viewer to its initial state
+    /// </summary>
+    public async Task<bool> ResetAsync()
+    {
+        if (_viewer != null && !string.IsNullOrEmpty(_viewerId) && _viewerInitialized && _modelLoaded)
+        {
+            return await _viewer.ResetAsync(_viewerId);
+        }
+        
+        return false;
+    }
+
+    public async Task<bool> ShowAsync(int viewType, int? id = null, int? model = null, bool withAnimation = true)
+    {
+        if (_viewer != null && !string.IsNullOrEmpty(_viewerId) && _viewerInitialized)
+        {
+            return await _viewer.ShowAsync(_viewerId, viewType, id, model, withAnimation);
+        }
+        
+        return false;
+    }
+
+    /// <summary>
+    /// Generic method to call any viewer method not yet wrapped
+    /// </summary>
+    public async Task<T?> CallViewerMethodAsync<T>(string methodName, params object[] args)
+    {
+        if (_viewer != null && !string.IsNullOrEmpty(_viewerId) && _viewerInitialized)
+        {
+            return await _viewer.InvokeViewerMethodAsync<T>(_viewerId, methodName, args);
+        }
+        
+        return default;
+    }
+
+    /// <summary>
+    /// Highlights/selects specific elements (replaces current selection)
+    /// </summary>
+    public async Task<bool> HighlightElementsAsync(int[] elementIds, int? modelId = null)
+    {
+        if (_viewer != null && !string.IsNullOrEmpty(_viewerId) && _viewerInitialized && _modelLoaded)
+        {
+            var result = await _viewer.HighlightElementsAsync(_viewerId, elementIds, modelId);
+            if (result)
+            {
+                var mid = modelId ?? 0;
+                foreach (var id in elementIds)
+                    _highlightedElements.Add((id, mid));
+                SelectionChanged?.Invoke();
+            }
+            return result;
+        }
+        
+        return false;
+    }
+
+    /// <summary>
+    /// Unhighlights (restores to normal style) the specified elements
+    /// </summary>
+    public async Task<bool> UnhighlightElementsAsync(int[] elementIds, int? modelId = null)
+    {
+        if (_viewer != null && !string.IsNullOrEmpty(_viewerId) && _viewerInitialized && _modelLoaded)
+        {
+            var result = await _viewer.UnhighlightElementsAsync(_viewerId, elementIds, modelId);
+            if (result)
+            {
+                var mid = modelId ?? 0;
+                foreach (var id in elementIds)
+                    _highlightedElements.Remove((id, mid));
+                SelectionChanged?.Invoke();
+            }
+            return result;
+        }
+        
+        return false;
+    }
+
+    /// <summary>
+    /// Checks if an element is currently highlighted
+    /// </summary>
+    public async Task<bool> IsElementHighlightedAsync(int elementId, int? modelId = null)
+    {
+        if (_viewer != null && !string.IsNullOrEmpty(_viewerId) && _viewerInitialized && _modelLoaded)
+        {
+            return await _viewer.IsElementHighlightedAsync(_viewerId, elementId, modelId);
+        }
+        
+        return false;
+    }
+
+    /// <summary>
+    /// Adds elements to the current selection
+    /// </summary>
+    public async Task<bool> AddToSelectionAsync(int[] elementIds, int? modelId = null)
+    {
+        if (_viewer != null && !string.IsNullOrEmpty(_viewerId) && _viewerInitialized && _modelLoaded)
+        {
+            return await _viewer.AddToSelectionAsync(_viewerId, elementIds, modelId);
+        }
+        
+        return false;
+    }
+
+    /// <summary>
+    /// Removes elements from the current selection
+    /// </summary>
+    public async Task<bool> RemoveFromSelectionAsync(int[] elementIds, int? modelId = null)
+    {
+        if (_viewer != null && !string.IsNullOrEmpty(_viewerId) && _viewerInitialized && _modelLoaded)
+        {
+            return await _viewer.RemoveFromSelectionAsync(_viewerId, elementIds, modelId);
+        }
+        
+        return false;
+    }
+
+    /// <summary>
+    /// Clears all selected/highlighted elements
+    /// </summary>
+    public async Task<bool> ClearSelectionAsync()
+    {
+        if (_viewer != null && !string.IsNullOrEmpty(_viewerId) && _viewerInitialized && _modelLoaded)
+        {
+            var result = await _viewer.ClearSelectionAsync(_viewerId);
+            if (result)
+            {
+                _highlightedElements.Clear();
+                SelectionChanged?.Invoke();
+            }
+            return result;
+        }
+        
+        return false;
+    }
+
+    /// <summary>
+    /// Gets all currently selected/highlighted elements
+    /// </summary>
+    public async Task<SelectedElement[]> GetSelectedElementsAsync()
+    {
+        if (_viewer != null && !string.IsNullOrEmpty(_viewerId) && _viewerInitialized && _modelLoaded)
+        {
+            return await _viewer.GetSelectedElementsAsync(_viewerId);
+        }
+        
+        return Array.Empty<SelectedElement>();
+    }
+
+    /// <summary>
+    /// Hides specific elements
+    /// </summary>
+    public async Task<bool> HideElementsAsync(int[] elementIds)
+    {
+        if (_viewer != null && !string.IsNullOrEmpty(_viewerId) && _viewerInitialized && _modelLoaded)
+        {
+            return await _viewer.HideElementsAsync(_viewerId, elementIds);
+        }
+        
+        return false;
+    }
+
+    /// <summary>
+    /// Shows specific elements
+    /// </summary>
+    public async Task<bool> ShowElementsAsync(int[] elementIds)
+    {
+        if (_viewer != null && !string.IsNullOrEmpty(_viewerId) && _viewerInitialized && _modelLoaded)
+        {
+            return await _viewer.ShowElementsAsync(_viewerId, elementIds);
+        }
+        
+        return false;
+    }
+
+    /// <summary>
+    /// Unhides all elements
+    /// </summary>
+    public async Task<bool> UnhideAllElementsAsync()
+    {
+        if (_viewer != null && !string.IsNullOrEmpty(_viewerId) && _viewerInitialized && _modelLoaded)
+        {
+            return await _viewer.UnhideAllElementsAsync(_viewerId);
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Isolates specific elements (hides everything else)
+    /// </summary>
+    public async Task<bool> IsolateElementsAsync(int[] elementIds)
+    {
+        if (_viewer != null && !string.IsNullOrEmpty(_viewerId) && _viewerInitialized && _modelLoaded)
+        {
+            return await _viewer.IsolateElementsAsync(_viewerId, elementIds);
+        }
+        
+        return false;
+    }
+
+    /// <summary>
+    /// Unisolates elements (shows all hidden elements)
+    /// </summary>
+    public async Task<bool> UnisolateElementsAsync()
+    {
+        if (_viewer != null && !string.IsNullOrEmpty(_viewerId) && _viewerInitialized && _modelLoaded)
+        {
+            return await _viewer.UnisolateElementsAsync(_viewerId);
+        }
+        
+        return false;
+    }
+
+    /// <summary>
+    /// Gets the list of currently isolated element IDs
+    /// </summary>
+    /// <returns>Array of isolated element IDs</returns>
+    public async Task<int[]> GetIsolatedElementsAsync()
+    {
+        if (_viewer != null && !string.IsNullOrEmpty(_viewerId) && _viewerInitialized && _modelLoaded)
+        {
+            return await _viewer.GetIsolatedElementsAsync(_viewerId);
+        }
+        
+        return Array.Empty<int>();
+    }
+
+    public async Task<List<ProductTypeInfo>> GetProductTypesAsync(int? modelId = null)
+    {
+        if (_viewer == null || string.IsNullOrEmpty(_viewerId) || !_viewerInitialized || !_modelLoaded)
+            return new List<ProductTypeInfo>();
+
+        var results = await _viewer.GetModelProductTypesAsync(_viewerId, modelId);
+        return results.Select(r => new ProductTypeInfo
+        {
+            TypeId = r.TypeId,
+            TypeName = ProductTypeNames.GetTypeName(r.TypeId),
+            DisplayName = ProductTypeNames.GetDisplayName(r.TypeId),
+            Icon = ProductTypeNames.GetTypeIcon(r.TypeId),
+            ProductIds = r.ProductIds,
+            ModelId = r.ModelId
+        }).ToList();
+    }
+
+    public async Task<int?> GetProductTypeAsync(int productId, int? modelId = null)
+    {
+        if (_viewer == null || string.IsNullOrEmpty(_viewerId) || !_viewerInitialized)
+            return null;
+
+        return await _viewer.GetProductTypeAsync(_viewerId, productId, modelId);
+    }
+
+    public async Task<int[]> GetProductsOfTypeAsync(int typeId, int? modelId = null)
+    {
+        if (_viewer == null || string.IsNullOrEmpty(_viewerId) || !_viewerInitialized || !_modelLoaded)
+            return Array.Empty<int>();
+
+        return await _viewer.GetProductsOfTypeAsync(_viewerId, typeId, modelId);
+    }
+
+    /// <summary>
+    /// Dispose the viewer and JS interop
+    /// </summary>
+    public async ValueTask DisposeAsync()
+    {
+        if (_viewer != null && !string.IsNullOrEmpty(_viewerId) && _viewerInitialized)
+        {
+            try
+            {
+                await _viewer.DisposeViewerAsync(_viewerId);
+                await _viewer.DisposeAsync();
+            }
+            catch (JSDisconnectedException)
+            {
+                // Expected when circuit disconnects before disposal (e.g., browser tab closed)
+            }
+        }
+
+        _dotNetRef?.Dispose();
+    }
+} 

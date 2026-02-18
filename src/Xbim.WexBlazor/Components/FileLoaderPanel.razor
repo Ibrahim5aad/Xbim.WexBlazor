@@ -1,0 +1,722 @@
+﻿@using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.AspNetCore.Components
+@using Microsoft.Extensions.DependencyInjection
+@using Xbim.WexBlazor.Models
+@using Xbim.WexBlazor.Services
+@using Xbim.WexBlazor.Services.Abstractions
+@namespace Xbim.WexBlazor.Components
+@inject NavigationManager NavigationManager
+@inject IServiceProvider ServiceProvider
+@inject IXbimHostingModeProvider HostingModeProvider
+
+<div class="file-loader-panel @CssClass @(IsVisible ? "visible" : "")">
+    <div class="file-loader-header">
+        <h5>
+            <i class="bi bi-folder2-open"></i>
+            Load Model
+        </h5>
+        @if (AllowClose)
+        {
+            <button type="button" class="btn-close" @onclick="Close" aria-label="Close"></button>
+        }
+    </div>
+
+    <div class="file-loader-body">
+        <ul class="nav nav-tabs mb-3" role="tablist">
+            @if (DemoModels != null && DemoModels.Any())
+            {
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link @(_activeTab == "demo" ? "active" : "")" 
+                            @onclick='() => _activeTab = "demo"' 
+                            type="button">
+                        <i class="bi bi-collection"></i> Demo Models
+                    </button>
+                </li>
+            }
+            <li class="nav-item" role="presentation">
+                <button class="nav-link @(_activeTab == "local" ? "active" : "")" 
+                        @onclick='() => _activeTab = "local"' 
+                        type="button">
+                    <i class="bi bi-upload"></i> Local File
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link @(_activeTab == "url" ? "active" : "")" 
+                        @onclick='() => _activeTab = "url"' 
+                        type="button">
+                    <i class="bi bi-link-45deg"></i> From URL
+                </button>
+            </li>
+        </ul>
+
+        @if (_activeTab == "demo" && DemoModels != null && DemoModels.Any())
+        {
+            <div class="file-loader-tab-content">
+                <div class="mb-3">
+                    <div class="demo-models-list">
+                        @foreach (var demoModel in DemoModels)
+                        {
+                            <button type="button" 
+                                    class="demo-model-item @(IsLoading && _loadingModelPath == demoModel.Path ? "loading" : "")" 
+                                    @onclick='() => HandleDemoModelLoad(demoModel.Path)'
+                                    disabled="@IsLoading">
+                                <div class="demo-model-icon">
+                                    <i class="bi bi-house-door"></i>
+                                </div>
+                                <div class="demo-model-info">
+                                    <div class="demo-model-name">@demoModel.Name</div>
+                                    @if (!string.IsNullOrEmpty(demoModel.Description))
+                                    {
+                                        <div class="demo-model-description">@demoModel.Description</div>
+                                    }
+                                </div>
+                                <div class="demo-model-action">
+                                    <i class="bi bi-arrow-right-circle"></i>
+                                </div>
+                            </button>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+        else if (_activeTab == "local")
+        {
+            <div class="file-loader-tab-content">
+                <div class="mb-3">
+                    <label class="form-label">Select Model File</label>
+                    <InputFile class="form-control" 
+                              OnChange="HandleFileSelected" 
+                              accept="@GetAcceptedFormats()"
+                              disabled="@IsLoading" />
+                    <div class="form-text">
+                        @if (AllowIfcFiles)
+                        {
+                            <span>Supported formats: <strong>IFC</strong>, <strong>IFC-ZIP</strong>, <strong>wexBIM</strong></span>
+                        }
+                        else
+                        {
+                            <span>Supported format: <strong>wexBIM</strong></span>
+                        }
+                    </div>
+                </div>
+
+                @if (!string.IsNullOrEmpty(_selectedFileName))
+                {
+                    <div class="alert @GetFileAlertClass() file-selected-alert">
+                        <div class="file-selected-header">
+                            <div class="file-selected-icon">
+                                <i class="bi @GetFileIcon()"></i>
+                            </div>
+                            <div class="file-selected-content">
+                                <div class="file-selected-label">
+                                    <strong>Selected:</strong>
+                                </div>
+                                <div class="file-selected-name">
+                                    @_selectedFileName
+                                </div>
+                                <div class="file-selected-badges">
+                                    <span class="badge @GetFormatBadgeClass()">@GetFormatName()</span>
+                                    <span class="badge bg-secondary">@_selectedFileSize</span>
+                                </div>
+                            </div>
+                        </div>
+                        @if (_selectedFormat == ModelFormat.Ifc || _selectedFormat == ModelFormat.IfcZip)
+                        {
+                            <div class="file-selected-info">
+                                <i class="bi bi-info-circle"></i>
+                                <span>IFC files will be processed to generate geometry and enable property viewing.</span>
+                            </div>
+                        }
+                    </div>
+                }
+
+            </div>
+        }
+        else if (_activeTab == "url")
+        {
+            <div class="file-loader-tab-content">
+                <div class="mb-3">
+                    <label class="form-label">Model URL</label>
+                    <input type="url" 
+                           class="form-control" 
+                           @bind="_modelUrl" 
+                           placeholder="https://example.com/model.wexbim"
+                           disabled="@IsLoading" />
+                    <div class="form-text">
+                        Enter the full URL to a wexBIM file
+                    </div>
+                </div>
+
+                @if (AllowCustomHeaders)
+                {
+                    <div class="mb-3">
+                        <label class="form-label">
+                            <i class="bi bi-shield-lock"></i> Custom Headers (Optional)
+                        </label>
+                        <textarea class="form-control" 
+                                 rows="3" 
+                                 @bind="_customHeaders"
+                                 placeholder='{ "Authorization": "Bearer token", "Custom-Header": "value" }'
+                                 disabled="@IsLoading"></textarea>
+                        <div class="form-text">
+                            JSON format for authenticated requests
+                        </div>
+                    </div>
+                }
+
+                <button type="button" 
+                        class="btn btn-primary w-100" 
+                        @onclick="HandleUrlLoad"
+                        disabled="@(IsLoading || string.IsNullOrWhiteSpace(_modelUrl))">
+                    <i class="bi bi-download"></i> Load from URL
+                </button>
+            </div>
+        }
+
+        @if (IsLoading)
+        {
+            <div class="file-loader-progress">
+                <div class="d-flex align-items-center">
+                    <div class="spinner-border spinner-border-sm me-2" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <span>@(ProcessingMessage ?? GetLoadingMessage())</span>
+                </div>
+                @if (_loadingProgress > 0)
+                {
+                    <div class="progress mt-2">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                             role="progressbar" 
+                             style="width: @(_loadingProgress)%" 
+                             aria-valuenow="@_loadingProgress" 
+                             aria-valuemin="0" 
+                             aria-valuemax="100">
+                            @(_loadingProgress)%
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+
+        @if (!string.IsNullOrEmpty(_errorMessage))
+        {
+            <div class="alert alert-danger mt-3">
+                <i class="bi bi-exclamation-triangle"></i>
+                @_errorMessage
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    private IIfcModelService? _ifcModelService;
+    private IPropertyService? _propertyService;
+
+    // Support both interface and concrete type for backward compatibility
+    private IIfcModelService? IfcModelService => _ifcModelService ??=
+        ServiceProvider.GetService<IIfcModelService>() ??
+        ServiceProvider.GetService<IfcModelService>();
+    private IPropertyService? PropertyService => _propertyService ??=
+        ServiceProvider.GetService<IPropertyService>() ??
+        ServiceProvider.GetService<PropertyService>();
+    
+    [CascadingParameter]
+    public XbimViewer? Viewer { get; set; }
+    
+    [Parameter]
+    public bool IsVisible { get; set; } = true;
+    
+    [Parameter]
+    public EventCallback<bool> IsVisibleChanged { get; set; }
+
+    [Parameter]
+    public bool AllowClose { get; set; } = true;
+
+    [Parameter]
+    public bool AllowCustomHeaders { get; set; } = true;
+    
+    [Parameter]
+    public bool AllowIfcFiles { get; set; } = true;
+    
+    [Parameter]
+    public bool AutoCloseOnLoad { get; set; } = true;
+
+    [Parameter]
+    public string? CssClass { get; set; }
+
+    [Parameter]
+    public EventCallback<FileLoadedEventArgs> OnFileLoaded { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnUrlLoaded { get; set; }
+
+    [Parameter]
+    public EventCallback OnClose { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnError { get; set; }
+    
+    [Parameter]
+    public EventCallback<LoadedModel> OnModelLoaded { get; set; }
+
+    [Parameter]
+    public List<DemoModel>? DemoModels { get; set; }
+    
+    [Parameter]
+    public string? ProcessingMessage { get; set; }
+
+    private string _activeTab = "local";
+
+    protected override void OnInitialized()
+    {
+        // FileLoaderPanel is only available in Standalone mode.
+        // In PlatformConnected mode, models are loaded through workspace/project navigation.
+        if (HostingModeProvider.IsPlatformConnected)
+        {
+            throw new StandaloneOnlyComponentException("FileLoaderPanel");
+        }
+        base.OnInitialized();
+    }
+
+    protected override void OnParametersSet()
+    {
+        if (DemoModels != null && DemoModels.Any() && _activeTab == "local" && !IsLoading && string.IsNullOrEmpty(_selectedFileName))
+        {
+            _activeTab = "demo";
+        }
+        base.OnParametersSet();
+    }
+    private string? _selectedFileName;
+    private string? _selectedFileSize;
+    private string? _modelUrl;
+    private string? _customHeaders;
+    private string? _errorMessage;
+    private int _loadingProgress;
+    private bool IsLoading;
+    private string? _loadingModelPath;
+    private ModelFormat _selectedFormat = ModelFormat.Wexbim;
+    
+    private string GetAcceptedFormats()
+    {
+        return AllowIfcFiles ? ".ifc,.ifczip,.wexbim" : ".wexbim";
+    }
+    
+    private string GetFileIcon()
+    {
+        return _selectedFormat switch
+        {
+            ModelFormat.Ifc => "bi-file-earmark-code",
+            ModelFormat.IfcZip => "bi-file-earmark-zip",
+            _ => "bi-file-earmark-binary"
+        };
+    }
+    
+    private string GetFileAlertClass()
+    {
+        return _selectedFormat switch
+        {
+            ModelFormat.Ifc or ModelFormat.IfcZip => "alert-success",
+            _ => "alert-info"
+        };
+    }
+    
+    private string GetFormatBadgeClass()
+    {
+        return _selectedFormat switch
+        {
+            ModelFormat.Ifc or ModelFormat.IfcZip => "bg-success",
+            _ => "bg-primary"
+        };
+    }
+    
+    private string GetFormatName()
+    {
+        return _selectedFormat switch
+        {
+            ModelFormat.Ifc => "IFC",
+            ModelFormat.IfcZip => "IFC-ZIP",
+            _ => "wexBIM"
+        };
+    }
+    
+    private string GetLoadingMessage()
+    {
+        return _selectedFormat switch
+        {
+            ModelFormat.Ifc or ModelFormat.IfcZip => "Processing IFC file...",
+            _ => "Loading model..."
+        };
+    }
+    
+    /// <summary>
+    /// Sets the loading state and message (can be called from parent)
+    /// </summary>
+    public void SetLoading(bool loading, string? message = null)
+    {
+        IsLoading = loading;
+        ProcessingMessage = message;
+        StateHasChanged();
+    }
+    
+    /// <summary>
+    /// Updates the progress (can be called from parent)
+    /// </summary>
+    public void SetProgress(int percent, string? message = null)
+    {
+        _loadingProgress = percent;
+        if (message != null)
+        {
+            ProcessingMessage = message;
+        }
+        StateHasChanged();
+    }
+
+    private async Task HandleFileSelected(InputFileChangeEventArgs e)
+    {
+        var file = e.File;
+        if (file == null) return;
+
+        _activeTab = "local";
+        
+        _selectedFileName = file.Name;
+        _selectedFileSize = FormatFileSize(file.Size);
+        _selectedFormat = FileLoadedEventArgs.GetFormatFromFileName(file.Name);
+        _errorMessage = null;
+        ProcessingMessage = null;
+
+        if (!AllowIfcFiles && (_selectedFormat == ModelFormat.Ifc || _selectedFormat == ModelFormat.IfcZip))
+        {
+            _errorMessage = "IFC files are not supported in this context. Please use a wexBIM file.";
+            await OnError.InvokeAsync(_errorMessage);
+            return;
+        }
+
+        var isIfcFile = _selectedFormat == ModelFormat.Ifc || _selectedFormat == ModelFormat.IfcZip;
+
+        try
+        {
+            IsLoading = true;
+            _loadingProgress = 0;
+            ProcessingMessage = isIfcFile ? "Reading file..." : null;
+            StateHasChanged();
+
+            var maxSize = _selectedFormat == ModelFormat.Wexbim ? file.Size : Math.Max(file.Size, 500 * 1024 * 1024);
+            await using var stream = file.OpenReadStream(maxSize);
+            using var memoryStream = new MemoryStream();
+            
+            var buffer = new byte[81920];
+            int bytesRead;
+            long totalRead = 0;
+            
+            while ((bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length)) > 0)
+            {
+                await memoryStream.WriteAsync(buffer, 0, bytesRead);
+                totalRead += bytesRead;
+                var readProgress = (int)((totalRead * 100) / file.Size);
+                _loadingProgress = isIfcFile ? Math.Min(readProgress / 5, 20) : readProgress;
+                StateHasChanged();
+            }
+
+            var fileData = memoryStream.ToArray();
+            
+            if (OnFileLoaded.HasDelegate)
+            {
+                await OnFileLoaded.InvokeAsync(new FileLoadedEventArgs
+                {
+                    FileData = fileData,
+                    FileName = file.Name,
+                    FileSize = file.Size,
+                    Format = _selectedFormat
+                });
+            }
+            else if (Viewer != null)
+            {
+                await LoadFileIntoViewerAsync(fileData, file.Name, file.Size, _selectedFormat);
+            }
+            
+            _selectedFileName = null;
+            _selectedFileSize = null;
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = $"Error loading file: {ex.Message}";
+            await OnError.InvokeAsync(_errorMessage);
+        }
+        finally
+        {
+            IsLoading = false;
+            _loadingProgress = 0;
+            ProcessingMessage = null;
+            StateHasChanged();
+        }
+    }
+    
+    private async Task LoadFileIntoViewerAsync(byte[] fileData, string fileName, long fileSize, ModelFormat format)
+    {
+        if (Viewer == null) return;
+        
+        try
+        {
+            if ((format == ModelFormat.Ifc || format == ModelFormat.IfcZip) && IfcModelService != null)
+            {
+                SetLoading(true, "Processing IFC file...");
+                await Task.Yield();
+                
+                var progress = new Progress<IfcProcessingProgress>(p =>
+                {
+                    SetProgress(p.PercentComplete, p.Message);
+                });
+
+                var result = await Task.Run(async () => 
+                    await IfcModelService.ProcessIfcBytesAsync(fileData, fileName, progress));
+
+                if (!result.Success || result.WexbimData == null)
+                {
+                    _errorMessage = result.ErrorMessage ?? "Failed to process IFC file";
+                    await OnError.InvokeAsync(_errorMessage);
+                    return;
+                }
+
+                SetProgress(98, "Loading model into viewer...");
+
+                var loadedModel = await Viewer.LoadModelFromBytesAsync(
+                    result.WexbimData,
+                    Path.ChangeExtension(fileName, ".wexbim"));
+
+                if (loadedModel != null)
+                {
+                    loadedModel.SizeBytes = result.WexbimData.Length;
+                    loadedModel.OriginalFormat = format;
+                    
+                    if (result.Model != null)
+                    {
+                        loadedModel.IfcModel = result.Model;
+                        
+                        if (PropertyService != null)
+                        {
+                            var propertySource = new IfcPropertySource(result.Model, loadedModel.Id);
+                            PropertyService.RegisterSource(propertySource);
+                        }
+                    }
+                    
+                    await OnModelLoaded.InvokeAsync(loadedModel);
+                    await CloseIfAutoClose();
+                }
+            }
+            else
+            {
+                var loadedModel = await Viewer.LoadModelFromBytesAsync(fileData, fileName);
+                if (loadedModel != null)
+                {
+                    loadedModel.SizeBytes = fileSize;
+                    loadedModel.OriginalFormat = format;
+                    await OnModelLoaded.InvokeAsync(loadedModel);
+                    await CloseIfAutoClose();
+                }
+            }
+        }
+        finally
+        {
+            SetLoading(false);
+        }
+    }
+    
+    private async Task CloseIfAutoClose()
+    {
+        if (AutoCloseOnLoad)
+        {
+            IsVisible = false;
+            await IsVisibleChanged.InvokeAsync(false);
+            await OnClose.InvokeAsync();
+            StateHasChanged();
+        }
+    }
+
+    private async Task HandleDemoModelLoad(string modelPath)
+    {
+        if (string.IsNullOrWhiteSpace(modelPath)) return;
+
+        _errorMessage = null;
+
+        try
+        {
+            IsLoading = true;
+            _loadingModelPath = modelPath;
+            _selectedFormat = FileLoadedEventArgs.GetFormatFromFileName(modelPath);
+            StateHasChanged();
+
+            string fullUrl;
+            if (modelPath.StartsWith("http://") || modelPath.StartsWith("https://"))
+            {
+                fullUrl = modelPath;
+            }
+            else if (modelPath.StartsWith("~/"))
+            {
+                var path = modelPath.Substring(2);
+                fullUrl = NavigationManager.ToAbsoluteUri(path).ToString();
+            }
+            else
+            {
+                var path = modelPath.TrimStart('/');
+                fullUrl = NavigationManager.ToAbsoluteUri(path).ToString();
+            }
+
+            if (OnUrlLoaded.HasDelegate)
+            {
+                await OnUrlLoaded.InvokeAsync(fullUrl);
+            }
+            else if (Viewer != null)
+            {
+                await LoadUrlIntoViewerAsync(fullUrl);
+            }
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = $"Error loading demo model: {ex.Message}";
+            await OnError.InvokeAsync(_errorMessage);
+        }
+        finally
+        {
+            IsLoading = false;
+            _loadingModelPath = null;
+            StateHasChanged();
+        }
+    }
+
+    private async Task HandleUrlLoad()
+    {
+        if (string.IsNullOrWhiteSpace(_modelUrl)) return;
+
+        _errorMessage = null;
+
+        try
+        {
+            IsLoading = true;
+            StateHasChanged();
+
+            if (!Uri.TryCreate(_modelUrl, UriKind.Absolute, out var uri))
+            {
+                throw new Exception("Invalid URL format");
+            }
+
+            if (OnUrlLoaded.HasDelegate)
+            {
+                await OnUrlLoaded.InvokeAsync(_modelUrl);
+            }
+            else if (Viewer != null)
+            {
+                await LoadUrlIntoViewerAsync(_modelUrl);
+            }
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = $"Error loading from URL: {ex.Message}";
+            await OnError.InvokeAsync(_errorMessage);
+        }
+        finally
+        {
+            IsLoading = false;
+            StateHasChanged();
+        }
+    }
+    
+    private async Task LoadUrlIntoViewerAsync(string url)
+    {
+        if (Viewer == null) return;
+        
+        try
+        {
+            var lowerUrl = url.ToLowerInvariant();
+            
+            if ((lowerUrl.EndsWith(".ifc") || lowerUrl.EndsWith(".ifczip")) && IfcModelService != null)
+            {
+                var fileName = Path.GetFileName(new Uri(url).LocalPath);
+                
+                SetLoading(true, "Downloading IFC file...");
+                
+                using var httpClient = new System.Net.Http.HttpClient();
+                httpClient.Timeout = TimeSpan.FromMinutes(5);
+                
+                var fileData = await httpClient.GetByteArrayAsync(url);
+                
+                SetProgress(0, "Processing IFC file...");
+                await Task.Yield();
+                
+                var progress = new Progress<IfcProcessingProgress>(p =>
+                {
+                    SetProgress(p.PercentComplete, p.Message);
+                });
+
+                var result = await Task.Run(async () => 
+                    await IfcModelService.ProcessIfcBytesAsync(fileData, fileName, progress));
+                
+                if (!result.Success || result.WexbimData == null)
+                {
+                    _errorMessage = result.ErrorMessage ?? "Failed to process IFC file";
+                    await OnError.InvokeAsync(_errorMessage);
+                    return;
+                }
+                
+                SetProgress(98, "Loading model into viewer...");
+                
+                var loadedModel = await Viewer.LoadModelFromBytesAsync(result.WexbimData, fileName);
+                if (loadedModel != null)
+                {
+                    loadedModel.IfcModel = result.Model;
+                    loadedModel.OriginalFormat = ModelFormat.Ifc;
+                    
+                    if (result.Model != null && PropertyService != null)
+                    {
+                        var propertySource = new IfcPropertySource(result.Model, loadedModel.Id, fileName);
+                        PropertyService.RegisterSource(propertySource);
+                    }
+                    
+                    await OnModelLoaded.InvokeAsync(loadedModel);
+                    await CloseIfAutoClose();
+                }
+            }
+            else
+            {
+                var loadedModel = await Viewer.LoadModelAsync(url);
+                if (loadedModel != null)
+                {
+                    await OnModelLoaded.InvokeAsync(loadedModel);
+                    await CloseIfAutoClose();
+                }
+            }
+        }
+        finally
+        {
+            SetLoading(false);
+        }
+    }
+
+    private async Task Close()
+    {
+        _selectedFileName = null;
+        _selectedFileSize = null;
+        _errorMessage = null;
+        IsLoading = false;
+        _loadingProgress = 0;
+        ProcessingMessage = null;
+        IsVisible = false;
+        await OnClose.InvokeAsync();
+    }
+
+    private string FormatFileSize(long bytes)
+    {
+        string[] sizes = { "B", "KB", "MB", "GB" };
+        double len = bytes;
+        int order = 0;
+        while (len >= 1024 && order < sizes.Length - 1)
+        {
+            order++;
+            len = len / 1024;
+        }
+        return $"{len:0.##} {sizes[order]}";
+    }
+
+    public void Show() => IsVisible = true;
+    public void Hide() => IsVisible = false;
+}
+

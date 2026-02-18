@@ -1,0 +1,193 @@
+﻿@using Xbim.WexBlazor.Models
+@using Microsoft.JSInterop
+@namespace Xbim.WexBlazor.Components
+@implements IDisposable
+@inject IJSRuntime JSRuntime
+
+<div class="sidebar-panel @(IsOpen ? "open" : "") @(_parentSidebar?.IsDocked == true ? "docked" : "")" style="@GetPanelStyle()" @ref="_panelElement">
+    @if (_parentSidebar?.IsDocked == true && IsOpen)
+    {
+        <div class="sidebar-panel-resize-handle @(_parentSidebar.Position == SidebarPosition.Left ? "resize-right" : "resize-left")" 
+             @onmousedown="StartResize" 
+             @ref="_resizeHandle"
+             title="Drag to resize"></div>
+    }
+    <div class="sidebar-panel-header">
+        <span class="sidebar-panel-title">
+            <i class="bi @Icon"></i>
+            @Title
+        </span>
+        <div class="sidebar-panel-actions">
+            <button class="sidebar-panel-btn" @onclick="ToggleDock" title="@(_parentSidebar?.IsDocked == true ? "Float" : "Dock")">
+                <i class="bi bi-@(_parentSidebar?.IsDocked == true ? "pip" : "pin-angle")"></i>
+            </button>
+            <button class="sidebar-panel-btn" @onclick="Close" title="Close">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+    </div>
+    <div class="sidebar-panel-content">
+        @ChildContent
+    </div>
+</div>
+
+@code {
+    [CascadingParameter]
+    private ViewerSidebar? _parentSidebar { get; set; }
+    
+    [Parameter]
+    public string Icon { get; set; } = "bi-square";
+    
+    [Parameter]
+    public string Title { get; set; } = "Panel";
+    
+    [Parameter]
+    public bool IsOpen { get; set; } = false;
+    
+    [Parameter]
+    public EventCallback<bool> IsOpenChanged { get; set; }
+    
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+    
+    [Parameter]
+    public int Width { get; set; } = 320;
+    
+    [Parameter]
+    public EventCallback<int> WidthChanged { get; set; }
+    
+    [Parameter]
+    public int MinWidth { get; set; } = 200;
+    
+    [Parameter]
+    public int MaxWidth { get; set; } = 800;
+    
+    private SidebarPanelInfo? _panelInfo;
+    private ElementReference _panelElement;
+    private ElementReference _resizeHandle;
+    private IJSObjectReference? _jsModule;
+    private bool _isResizing = false;
+    private int _currentWidth;
+    
+    protected override void OnInitialized()
+    {
+        _currentWidth = Width;
+        _panelInfo = new SidebarPanelInfo
+        {
+            Icon = Icon,
+            Title = Title,
+            Width = Width,
+            IsOpen = IsOpen,
+            OnToggle = () => InvokeAsync(StateHasChanged)
+        };
+        
+        _parentSidebar?.RegisterPanel(_panelInfo);
+    }
+    
+    protected override void OnParametersSet()
+    {
+        if (_panelInfo != null)
+        {
+            _panelInfo.Icon = Icon;
+            _panelInfo.Title = Title;
+            
+            if (Width != _currentWidth && !_isResizing)
+            {
+                _currentWidth = Width;
+                _panelInfo.Width = Width;
+            }
+            
+            if (_panelInfo.IsOpen != IsOpen)
+            {
+                IsOpen = _panelInfo.IsOpen;
+                IsOpenChanged.InvokeAsync(IsOpen);
+            }
+        }
+    }
+    
+    private string GetPanelStyle()
+    {
+        return $"width: {_currentWidth}px;";
+    }
+    
+    private async Task ToggleDock()
+    {
+        if (_parentSidebar != null)
+        {
+            await _parentSidebar.ToggleDocked();
+        }
+    }
+    
+    private async Task Close()
+    {
+        if (_panelInfo != null)
+        {
+            _panelInfo.IsOpen = false;
+        }
+        IsOpen = false;
+        await IsOpenChanged.InvokeAsync(false);
+        _parentSidebar?.NotifyPanelChanged();
+    }
+    
+    private async Task StartResize(Microsoft.AspNetCore.Components.Web.MouseEventArgs e)
+    {
+        if (_panelInfo == null || _parentSidebar == null || !_parentSidebar.IsDocked || !IsOpen)
+            return;
+
+        _isResizing = true;
+        _currentWidth = Width;
+
+        if (_jsModule == null)
+        {
+            _jsModule = await JSRuntime.InvokeAsync<IJSObjectReference>(
+                "import", "./_content/Xbim.WexBlazor/js/sidebarPanelResize.js");
+        }
+
+        var isLeftSide = _parentSidebar.Position == SidebarPosition.Left;
+        var startX = e.ClientX;
+        var startWidth = _currentWidth;
+
+        await _jsModule.InvokeVoidAsync("startResize", _panelElement, _resizeHandle, isLeftSide, startX, startWidth, MinWidth, MaxWidth, 
+            DotNetObjectReference.Create(this));
+    }
+
+    [JSInvokable]
+    public async Task OnResize(int newWidth)
+    {
+        if (_panelInfo != null && newWidth != _currentWidth)
+        {
+            _currentWidth = newWidth;
+            _panelInfo.Width = newWidth;
+            Width = newWidth;
+            
+            await WidthChanged.InvokeAsync(newWidth);
+            _parentSidebar?.NotifyPanelChanged();
+            
+            if (_parentSidebar != null)
+            {
+                await _parentSidebar.UpdateViewerPaddingAsync();
+            }
+            
+            StateHasChanged();
+        }
+    }
+
+    [JSInvokable]
+    public void OnResizeEnd()
+    {
+        _isResizing = false;
+    }
+    
+    public void Dispose()
+    {
+        if (_panelInfo != null)
+        {
+            _parentSidebar?.UnregisterPanel(_panelInfo);
+        }
+        
+        if (_jsModule != null)
+        {
+            _ = _jsModule.DisposeAsync();
+        }
+    }
+}

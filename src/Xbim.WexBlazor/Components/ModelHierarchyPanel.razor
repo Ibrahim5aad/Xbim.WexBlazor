@@ -1,0 +1,425 @@
+﻿@using Xbim.WexBlazor.Models
+@using Xbim.WexBlazor.Services
+@namespace Xbim.WexBlazor.Components
+@implements IDisposable
+@inject IfcHierarchyService? HierarchyService
+
+<div class="model-hierarchy-panel @CssClass @(IsVisible ? "visible" : "") @(ShowHeader ? "" : "embedded")">
+    @if (ShowHeader)
+    {
+        <div class="hierarchy-header">
+            <h6 class="hierarchy-title">
+                <i class="bi bi-diagram-3"></i> Model Hierarchy
+            </h6>
+            <div class="header-actions">
+                @if (AllowRefresh)
+                {
+                    <button class="btn-header-action" @onclick="RefreshAsync" title="Refresh" disabled="@_isLoading">
+                        <i class="bi bi-@(_isLoading ? "hourglass-split" : "arrow-clockwise")"></i>
+                    </button>
+                }
+                @if (AllowClose)
+                {
+                    <button class="btn-close-panel" @onclick="Close" title="Close">
+                        <i class="bi bi-x-lg"></i>
+                    </button>
+                }
+            </div>
+        </div>
+    }
+
+    <div class="hierarchy-tabs">
+        <button class="hierarchy-tab @(_activeTab == "types" ? "active" : "")" 
+                @onclick='() => _activeTab = "types"'>
+            <i class="bi bi-boxes"></i> Product Types
+        </button>
+        <button class="hierarchy-tab @(_activeTab == "spatial" ? "active" : "")" 
+                @onclick='() => _activeTab = "spatial"'
+                disabled="@(_spatialStructures.Count == 0)">
+            <i class="bi bi-building"></i> Spatial
+        </button>
+    </div>
+
+    <div class="hierarchy-content">
+        @if (_isLoading)
+        {
+            <div class="hierarchy-loading">
+                <div class="spinner-border spinner-border-sm" role="status"></div>
+                <span>Loading hierarchy...</span>
+            </div>
+        }
+        else if (_activeTab == "types")
+        {
+            @if (_productTypes.Count == 0)
+            {
+                <div class="hierarchy-empty">
+                    <i class="bi bi-inbox"></i>
+                    <span>No products found</span>
+                    <small>Load a model to view product types</small>
+                </div>
+            }
+            else
+            {
+                <div class="hierarchy-tree">
+                    @foreach (var typeGroup in _productTypes.GroupBy(p => p.DisplayName).OrderBy(g => g.Key))
+                    {
+                        var typeName = typeGroup.Key;
+                        var allTypeInfos = typeGroup.ToList();
+                        var allProducts = allTypeInfos.SelectMany(t => t.ProductIds.Select(id => (ProductId: id, ModelId: t.ModelId))).ToList();
+                        var typeKey = typeName;
+                        var isExpanded = _expandedTypes.Contains(typeKey);
+                        var firstTypeInfo = allTypeInfos.First();
+                        
+                        <div class="tree-node @(isExpanded ? "expanded" : "")">
+                            <div class="tree-node-header" @onclick="() => ToggleTypeExpandByName(typeName)">
+                                <button class="tree-expand-btn">
+                                    <i class="bi bi-@(isExpanded ? "chevron-down" : "chevron-right")"></i>
+                                </button>
+                                <i class="bi @firstTypeInfo.Icon tree-node-icon"></i>
+                                <span class="tree-node-name">@typeName</span>
+                                <span class="tree-node-count">@allProducts.Count</span>
+                            </div>
+                            @if (isExpanded)
+                            {
+                                <div class="tree-node-children">
+                                    @foreach (var (productId, modelId) in allProducts.Take(MaxProductsPerType))
+                                    {
+                                        <div class="tree-leaf @(_selectedProducts.Contains((productId, modelId)) ? "selected" : "")"
+                                             @onclick="() => HandleProductClick(productId, modelId)"
+                                             @onclick:stopPropagation="true">
+                                            <i class="bi bi-box tree-leaf-icon"></i>
+                                            <span class="tree-leaf-name">#@productId</span>
+                                        </div>
+                                    }
+                                    @if (allProducts.Count > MaxProductsPerType)
+                                    {
+                                        <div class="tree-more">
+                                            <i class="bi bi-three-dots"></i>
+                                            <span>+@(allProducts.Count - MaxProductsPerType) more</span>
+                                        </div>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            }
+        }
+        else if (_activeTab == "spatial")
+        {
+            @if (_spatialStructures.Count == 0)
+            {
+                <div class="hierarchy-empty">
+                    <i class="bi bi-building"></i>
+                    <span>Spatial data not available</span>
+                    <small>Load an IFC file to view spatial structure</small>
+                </div>
+            }
+            else
+            {
+                <div class="hierarchy-tree">
+                    @foreach (var group in _spatialStructures.GroupBy(s => s.ModelId ?? 0))
+                    {
+                        var modelId = group.Key;
+                        var modelName = GetModelName(modelId);
+                        var hasMultipleModels = _spatialStructures.Select(s => s.ModelId ?? 0).Distinct().Count() > 1;
+                        var isModelExpanded = !hasMultipleModels || _expandedModels.Contains(modelId);
+                        var totalProducts = group.Sum(s => CountProductsInNode(s));
+                        <div class="tree-model-group">
+                            @if (hasMultipleModels)
+                            {
+                                <div class="tree-model-header @(isModelExpanded ? "expanded" : "")" @onclick="() => ToggleModelExpand(modelId)">
+                                    <button class="tree-expand-btn">
+                                        <i class="bi bi-@(isModelExpanded ? "chevron-down" : "chevron-right")"></i>
+                                    </button>
+                                    <i class="bi bi-file-earmark-binary"></i>
+                                    <span class="tree-model-name">@modelName</span>
+                                    @if (totalProducts > 0)
+                                    {
+                                        <span class="tree-node-count">@totalProducts</span>
+                                    }
+                                </div>
+                            }
+                            @if (isModelExpanded)
+                            {
+                            <div class="@(hasMultipleModels ? "tree-model-group-content" : "")">
+                            @foreach (var structure in group)
+                            {
+                                @RenderSpatialNode(structure)
+                            }
+                            </div>
+                            }
+                        </div>
+                    }
+                </div>
+            }
+        }
+    </div>
+</div>
+
+@code {
+    [CascadingParameter]
+    public XbimViewer? Viewer { get; set; }
+
+    [Parameter]
+    public bool IsVisible { get; set; } = true;
+
+    [Parameter]
+    public bool AllowClose { get; set; } = true;
+
+    [Parameter]
+    public bool AllowRefresh { get; set; } = true;
+    
+    [Parameter]
+    public bool ShowHeader { get; set; } = true;
+
+    [Parameter]
+    public string? CssClass { get; set; }
+
+    [Parameter]
+    public EventCallback OnClose { get; set; }
+
+    [Parameter]
+    public EventCallback<(int ProductId, int ModelId)> OnProductSelected { get; set; }
+
+    [Parameter]
+    public int MaxProductsPerType { get; set; } = 50;
+
+    [Parameter]
+    public bool AutoHighlightOnSelect { get; set; } = true;
+    
+
+    private string _activeTab = "types";
+    private List<ProductTypeInfo> _productTypes = new();
+    private List<HierarchyNode> _spatialStructures = new();
+    private HashSet<string> _expandedTypes = new();
+    private HashSet<string> _expandedSpatialNodes = new();
+    private HashSet<int> _expandedModels = new();
+    private HashSet<(int ProductId, int ModelId)> _selectedProducts = new();
+    private bool _isLoading = false;
+    private bool _isSubscribed = false;
+
+    protected override void OnParametersSet()
+    {
+        if (Viewer != null && !_isSubscribed)
+        {
+            Viewer.ModelChanged += OnModelChanged;
+            _isSubscribed = true;
+        }
+        base.OnParametersSet();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && Viewer != null)
+        {
+            var models = Viewer.GetLoadedModels();
+            if (models.Count > 0)
+            {
+                await RefreshAsync();
+            }
+        }
+    }
+
+    private void OnModelChanged(ModelChangedEventArgs args)
+    {
+        InvokeAsync(async () =>
+        {
+            await RefreshAsync();
+            StateHasChanged();
+        });
+    }
+
+    public async Task RefreshAsync()
+    {
+        if (Viewer == null) return;
+        
+        _isLoading = true;
+        StateHasChanged();
+        
+        try
+        {
+            var allProductTypes = await Viewer.GetProductTypesAsync();
+            var loadedModels = Viewer.GetLoadedModels();
+            var loadedModelIds = new HashSet<int>(loadedModels.Values.Select(m => m.Id));
+            
+            _productTypes = allProductTypes
+                .Where(pt => loadedModelIds.Contains(pt.ModelId))
+                .ToList();
+            
+            _spatialStructures.Clear();
+            if (HierarchyService != null)
+            {
+                foreach (var model in loadedModels.Values)
+                {
+                    if (model.IfcModel != null)
+                    {
+                        var structure = HierarchyService.GetSpatialStructure(model.IfcModel, model.Id);
+                        if (structure != null)
+                        {
+                            _spatialStructures.Add(structure);
+                        }
+                    }
+                }
+            }
+            
+            _selectedProducts.RemoveWhere(s => !loadedModelIds.Contains(s.ModelId));
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading hierarchy: {ex.Message}");
+        }
+        finally
+        {
+            _isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private string GetModelName(int modelId)
+    {
+        var models = Viewer?.GetLoadedModels();
+        if (models != null && models.TryGetValue(modelId, out var model))
+        {
+            return model.Name;
+        }
+        return $"Model {modelId}";
+    }
+
+    private string GetTypeKey(ProductTypeInfo typeInfo) => $"{typeInfo.ModelId}-{typeInfo.TypeId}";
+
+    private void ToggleModelExpand(int modelId)
+    {
+        if (_expandedModels.Contains(modelId))
+            _expandedModels.Remove(modelId);
+        else
+            _expandedModels.Add(modelId);
+    }
+
+    private int CountProductsInNode(HierarchyNode node)
+    {
+        return node.ProductCount + node.Children.Sum(c => CountProductsInNode(c));
+    }
+
+    private void ToggleTypeExpand(ProductTypeInfo typeInfo)
+    {
+        var key = GetTypeKey(typeInfo);
+        if (_expandedTypes.Contains(key))
+            _expandedTypes.Remove(key);
+        else
+            _expandedTypes.Add(key);
+    }
+
+    private void ToggleTypeExpandByName(string typeName)
+    {
+        if (_expandedTypes.Contains(typeName))
+            _expandedTypes.Remove(typeName);
+        else
+            _expandedTypes.Add(typeName);
+    }
+
+    private async Task HandleProductClick(int productId, int modelId)
+    {
+        if (Viewer == null) return;
+        
+        var selection = (productId, modelId);
+        var isSelected = _selectedProducts.Contains(selection);
+        
+        if (AutoHighlightOnSelect)
+        {
+            if (isSelected)
+            {
+                await Viewer.UnhighlightElementsAsync(new[] { productId }, modelId);
+                _selectedProducts.Remove(selection);
+            }
+            else
+            {
+                await Viewer.HighlightElementsAsync(new[] { productId }, modelId);
+                _selectedProducts.Add(selection);
+            }
+        }
+        else
+        {
+            if (isSelected)
+                _selectedProducts.Remove(selection);
+            else
+                _selectedProducts.Add(selection);
+        }
+        
+        if (OnProductSelected.HasDelegate)
+        {
+            await OnProductSelected.InvokeAsync(selection);
+        }
+        
+        StateHasChanged();
+    }
+
+    private async Task Close()
+    {
+        IsVisible = false;
+        await OnClose.InvokeAsync();
+    }
+
+    private RenderFragment RenderSpatialNode(HierarchyNode node) => __builder =>
+    {
+        var nodeKey = $"{node.ModelId}-{node.Id}";
+        var hasChildren = node.Children.Count > 0;
+        var isExpanded = _expandedSpatialNodes.Contains(nodeKey);
+
+        <div class="tree-node @(isExpanded ? "expanded" : "")">
+            <div class="tree-node-header" @onclick="() => ToggleSpatialNode(nodeKey)">
+                @if (hasChildren)
+                {
+                    <button class="tree-expand-btn">
+                        <i class="bi bi-@(isExpanded ? "chevron-down" : "chevron-right")"></i>
+                    </button>
+                }
+                else
+                {
+                    <span class="tree-expand-spacer"></span>
+                }
+                <i class="bi @(node.Icon ?? "bi-box") tree-node-icon"></i>
+                <span class="tree-node-name">@(string.IsNullOrEmpty(node.Name) ? $"#{node.Id}" : node.Name)</span>
+                @if (node.ProductCount > 0)
+                {
+                    <span class="tree-node-count">@node.ProductCount</span>
+                }
+            </div>
+            @if (isExpanded && hasChildren)
+            {
+                <div class="tree-node-children">
+                    @foreach (var child in node.Children)
+                    {
+                        @RenderSpatialNode(child)
+                    }
+                </div>
+            }
+        </div>
+    };
+
+    private void ToggleSpatialNode(string nodeKey)
+    {
+        if (_expandedSpatialNodes.Contains(nodeKey))
+            _expandedSpatialNodes.Remove(nodeKey);
+        else
+            _expandedSpatialNodes.Add(nodeKey);
+    }
+
+    public void Show() => IsVisible = true;
+    public void Hide() => IsVisible = false;
+    public void ExpandAll() 
+    {
+        foreach (var typeName in _productTypes.Select(t => t.DisplayName).Distinct())
+            _expandedTypes.Add(typeName);
+    }
+    public void CollapseAll() => _expandedTypes.Clear();
+    public void ClearSelection() => _selectedProducts.Clear();
+
+    public void Dispose()
+    {
+        if (Viewer != null && _isSubscribed)
+        {
+            Viewer.ModelChanged -= OnModelChanged;
+        }
+    }
+}

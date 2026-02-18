@@ -1,0 +1,66 @@
+import { Viewer } from "../../viewer";
+import { IPlugin } from "../plugin";
+import { ClippingPlane } from "../../bcf/clipping-plane";
+export declare class InteractiveSectionBox implements IPlugin {
+    private viewer;
+    private vertices;
+    private colours;
+    private size;
+    private TOP;
+    private BOTTOM;
+    private FRONT;
+    private BACK;
+    private RIGHT;
+    private LEFT;
+    private boxColour;
+    private currentInteraction;
+    private program;
+    private vertex_buffer;
+    private colours_buffer;
+    private id_buffer;
+    private index_buffer;
+    private coordinatesAttributePointer;
+    private coloursAttributePointer;
+    private idsAttributePointer;
+    private mvUniformPointer;
+    private transformsUniformPointers;
+    private pUniformPointer;
+    private inverseProjectionUniformPointer;
+    private idCodingUniformPointer;
+    private idSelectedIdUniformPointer;
+    private hoverPickColourUniformPointer;
+    private viewportDimensions;
+    private initialized;
+    private transformations;
+    private normals;
+    private indices;
+    private ids;
+    private _hoverPickColour;
+    private readonly modelId;
+    /**
+     * Set to true to stop rendering of this plugin
+     */
+    get stopped(): boolean;
+    set stopped(value: boolean);
+    private _stopped;
+    init(viewer: Viewer): void;
+    setClippingPlanes(planes: ClippingPlane[]): void;
+    private sortPlanes;
+    private getNormal;
+    onBeforeDraw(width: number, height: number): void;
+    onAfterDraw(width: number, height: number): void;
+    onBeforeDrawId(): void;
+    onAfterDrawId(): void;
+    onAfterDrawModelId(): void;
+    private draw;
+    private bufferGeometry;
+    private initEvents;
+    private buildBoxQuadsFromCorners;
+    private getDragOffset;
+    private applySectionBox;
+    private initShader;
+    private setActive;
+    private getTransformationFromPlane;
+    private getTangent;
+    private clampPlanes;
+}

@@ -1,0 +1,472 @@
+﻿@using Xbim.WexBlazor.Models
+@using Xbim.WexBlazor.Services
+@using Xbim.WexBlazor.Services.Abstractions
+@using Microsoft.JSInterop
+@namespace Xbim.WexBlazor.Components
+@implements IAsyncDisposable
+@implements IDisposable
+@inject IJSRuntime JSRuntime
+@inject IPropertyService? PropertyService
+
+@* Toggle button positioned at the panel location *@
+@if (!IsVisible)
+{
+    <button class="properties-toggle-button @PositionClass" 
+            @onclick="ToggleVisibility"
+            title="Show Properties">
+        <i class="bi bi-info-circle"></i>
+    </button>
+}
+
+<div id="@_panelId" class="properties-panel @CssClass @(IsVisible ? "visible" : "") @PositionClass @(IsMinimized ? "minimized" : "") @(ShowHeader ? "" : "embedded")">
+    @if (ShowHeader)
+    {
+        <div class="properties-header">
+            <h6 class="properties-title">
+                @if (AllowDrag)
+                {
+                    <i class="bi bi-arrows-move drag-handle-icon" title="Drag to move"></i>
+                }
+                <i class="bi bi-info-circle"></i> Properties
+            </h6>
+            <div class="header-actions">
+                @if (AllowMinimize)
+                {
+                    <button class="btn-header-action" @onclick="ToggleMinimize" title="@(IsMinimized ? "Expand" : "Minimize")">
+                        <i class="bi bi-@(IsMinimized ? "arrows-angle-expand" : "dash")"></i>
+                    </button>
+                }
+                @if (AllowClose)
+                {
+                    <button class="btn-close-panel" @onclick="Close" title="Close">
+                        <i class="bi bi-x-lg"></i>
+                    </button>
+                }
+            </div>
+        </div>
+    }
+    
+    @if (!IsMinimized)
+    {
+        <div class="properties-body">
+            @if (EffectiveIsLoading)
+            {
+                <div class="properties-loading">
+                    <div class="spinner-border spinner-border-sm me-2" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <span>Loading properties...</span>
+                </div>
+            }
+            else if (EffectiveProperties == null || !EffectiveProperties.Groups.Any())
+            {
+                <div class="properties-empty">
+                    <i class="bi bi-cursor"></i>
+                    <p>@EmptyMessage</p>
+                </div>
+            }
+            else
+            {
+                <div class="properties-content">
+                    @if (!string.IsNullOrEmpty(EffectiveProperties.Name) || !string.IsNullOrEmpty(EffectiveProperties.TypeName))
+                    {
+                        <div class="element-header">
+                            @if (!string.IsNullOrEmpty(EffectiveProperties.Name))
+                            {
+                                <div class="element-name" title="@EffectiveProperties.Name">
+                                    @EffectiveProperties.Name
+                                </div>
+                            }
+                            @if (!string.IsNullOrEmpty(EffectiveProperties.TypeName))
+                            {
+                                <div class="element-type">
+                                    <span class="badge bg-secondary">@EffectiveProperties.TypeName</span>
+                                </div>
+                            }
+                        </div>
+                    }
+                    
+                    <div class="property-groups">
+                        @foreach (var group in EffectiveProperties.Groups)
+                        {
+                            <div class="property-group @(group.IsExpanded ? "expanded" : "collapsed")">
+                                <div class="property-group-header" @onclick="() => ToggleGroup(group)">
+                                    <i class="bi bi-chevron-@(group.IsExpanded ? "down" : "right")"></i>
+                                    <span class="group-name">@group.Name</span>
+                                    <span class="group-count">(@group.Properties.Count)</span>
+                                    @if (!string.IsNullOrEmpty(group.Source))
+                                    {
+                                        <span class="group-source">@group.Source</span>
+                                    }
+                                </div>
+                                
+                                @if (group.IsExpanded)
+                                {
+                                    <div class="property-list">
+                                        @foreach (var prop in group.Properties)
+                                        {
+                                            <div class="property-item">
+                                                <div class="property-name" title="@prop.Name">
+                                                    @prop.Name
+                                                </div>
+                                                <div class="property-value @GetValueTypeClass(prop.ValueType)" title="@GetFullValue(prop)">
+                                                    @if (string.IsNullOrEmpty(prop.Value))
+                                                    {
+                                                        <span class="value-empty">—</span>
+                                                    }
+                                                    else
+                                                    {
+                                                        @prop.Value
+                                                        @if (!string.IsNullOrEmpty(prop.Unit))
+                                                        {
+                                                            <span class="value-unit">@prop.Unit</span>
+                                                        }
+                                                    }
+                                                </div>
+                                            </div>
+                                        }
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    [CascadingParameter]
+    public XbimViewer? Viewer { get; set; }
+    
+    /// <summary>
+    /// Whether the panel is visible
+    /// </summary>
+    [Parameter]
+    public bool IsVisible { get; set; } = true;
+    
+    /// <summary>
+    /// The properties to display (optional - if not provided, properties are fetched automatically on pick)
+    /// </summary>
+    [Parameter]
+    public ElementProperties? Properties { get; set; }
+    
+    /// <summary>
+    /// Whether properties are currently loading (optional - managed internally if PropertyService is provided)
+    /// </summary>
+    [Parameter]
+    public bool IsLoading { get; set; }
+    
+    
+    /// <summary>
+    /// Position of the panel
+    /// </summary>
+    [Parameter]
+    public PropertiesPanelPosition Position { get; set; } = PropertiesPanelPosition.Right;
+    
+    /// <summary>
+    /// Whether the panel can be closed
+    /// </summary>
+    [Parameter]
+    public bool AllowClose { get; set; } = true;
+    
+    /// <summary>
+    /// Whether the panel can be minimized
+    /// </summary>
+    [Parameter]
+    public bool AllowMinimize { get; set; } = true;
+    
+    /// <summary>
+    /// Whether to show the panel header (set to false when embedded in sidebar)
+    /// </summary>
+    [Parameter]
+    public bool ShowHeader { get; set; } = true;
+    
+    /// <summary>
+    /// Message to show when no element is selected
+    /// </summary>
+    [Parameter]
+    public string EmptyMessage { get; set; } = "Select an element to view its properties";
+    
+    /// <summary>
+    /// Additional CSS classes
+    /// </summary>
+    [Parameter]
+    public string? CssClass { get; set; }
+    
+    /// <summary>
+    /// Event raised when the panel is closed
+    /// </summary>
+    [Parameter]
+    public EventCallback OnClose { get; set; }
+    
+    /// <summary>
+    /// Whether the panel can be dragged
+    /// </summary>
+    [Parameter]
+    public bool AllowDrag { get; set; } = true;
+    
+    /// <summary>
+    /// Event raised when visibility changes
+    /// </summary>
+    [Parameter]
+    public EventCallback<bool> OnVisibilityChanged { get; set; }
+    
+    /// <summary>
+    /// Whether to automatically highlight/unhighlight elements on pick.
+    /// Note: XbimViewer.AutoToggleHighlight handles this by default.
+    /// </summary>
+    [Parameter]
+    public bool AutoHighlightOnPick { get; set; } = false;
+    
+    private bool IsMinimized { get; set; } = false;
+    private string _panelId = $"properties-panel-{Guid.NewGuid():N}";
+    private IJSObjectReference? _jsModule;
+    private IJSObjectReference? _dragInstance;
+    private bool _isInteractive = false;
+    
+    private ElementProperties? _internalProperties;
+    private bool _internalIsLoading = false;
+    private bool _isSubscribed = false;
+    private int? _currentElementId;
+    private int? _currentModelId;
+    
+    private ElementProperties? EffectiveProperties => Properties ?? _internalProperties;
+    private bool EffectiveIsLoading => IsLoading || _internalIsLoading;
+    
+    protected override void OnParametersSet()
+    {
+        if (Viewer != null && !_isSubscribed)
+        {
+            Viewer.Pick += OnPick;
+            Viewer.SelectionChanged += OnSelectionChanged;
+            _isSubscribed = true;
+        }
+        base.OnParametersSet();
+    }
+    
+    private void OnPick(ViewerEventArgs args)
+    {
+        if (Viewer == null) return;
+        
+        InvokeAsync(async () =>
+        {
+            await HandlePick(args);
+            StateHasChanged();
+        });
+    }
+    
+    private void OnSelectionChanged()
+    {
+        if (Viewer == null) return;
+        
+        InvokeAsync(() =>
+        {
+            if (!Viewer.HasHighlightedElements)
+            {
+                ClearProperties();
+            }
+            StateHasChanged();
+        });
+    }
+    
+    private async Task HandlePick(ViewerEventArgs args)
+    {
+        if (args.Id == null || Viewer == null) return;
+        
+        var elementId = args.Id.Value;
+        var modelId = args.Model ?? 0;
+        
+        if (AutoHighlightOnPick)
+        {
+            var isHighlighted = await Viewer.IsElementHighlightedAsync(elementId, modelId);
+            
+            if (isHighlighted)
+            {
+                await Viewer.UnhighlightElementsAsync(new[] { elementId }, modelId);
+                ClearProperties();
+                return;
+            }
+            
+            await Viewer.HighlightElementsAsync(new[] { elementId }, modelId);
+            await FetchPropertiesAsync(elementId, modelId);
+        }
+        else
+        {
+            var isHighlighted = await Viewer.IsElementHighlightedAsync(elementId, modelId);
+            
+            if (isHighlighted)
+            {
+                await FetchPropertiesAsync(elementId, modelId);
+            }
+            else
+            {
+                ClearProperties();
+            }
+        }
+    }
+    
+    public void ClearProperties()
+    {
+        _internalProperties = null;
+        _currentElementId = null;
+        _currentModelId = null;
+        StateHasChanged();
+    }
+    
+    private async Task FetchPropertiesAsync(int elementId, int modelId)
+    {
+        if (PropertyService == null) return;
+        
+        try
+        {
+            _internalIsLoading = true;
+            _currentElementId = elementId;
+            _currentModelId = modelId;
+            StateHasChanged();
+            
+            _internalProperties = await PropertyService.GetPropertiesAsync(elementId, modelId);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error fetching properties: {ex.Message}");
+            _internalProperties = null;
+        }
+        finally
+        {
+            _internalIsLoading = false;
+            StateHasChanged();
+        }
+    }
+    
+    private async Task ToggleVisibility()
+    {
+        IsVisible = !IsVisible;
+        await OnVisibilityChanged.InvokeAsync(IsVisible);
+    }
+    
+    private string PositionClass => Position switch
+    {
+        PropertiesPanelPosition.Left => "position-left",
+        PropertiesPanelPosition.Right => "position-right",
+        PropertiesPanelPosition.BottomLeft => "position-bottom-left",
+        PropertiesPanelPosition.BottomRight => "position-bottom-right",
+        _ => "position-right"
+    };
+    
+    private void ToggleMinimize()
+    {
+        IsMinimized = !IsMinimized;
+    }
+    
+    private async Task Close()
+    {
+        IsVisible = false;
+        await OnClose.InvokeAsync();
+    }
+    
+    private void ToggleGroup(PropertyGroup group)
+    {
+        group.IsExpanded = !group.IsExpanded;
+    }
+    
+    private string GetValueTypeClass(string valueType)
+    {
+        return valueType switch
+        {
+            "boolean" or "logical" => "value-boolean",
+            "integer" => "value-integer",
+            "double" => "value-double",
+            "string" => "value-string",
+            "enumeration" => "value-enum",
+            "list" => "value-list",
+            "range" => "value-range",
+            _ => ""
+        };
+    }
+    
+    private string GetFullValue(PropertyValue prop)
+    {
+        if (string.IsNullOrEmpty(prop.Value))
+            return "";
+            
+        return string.IsNullOrEmpty(prop.Unit) 
+            ? prop.Value 
+            : $"{prop.Value} {prop.Unit}";
+    }
+    
+    /// <summary>
+    /// Shows the panel
+    /// </summary>
+    public async Task Show()
+    {
+        IsVisible = true;
+        await OnVisibilityChanged.InvokeAsync(true);
+    }
+    
+    /// <summary>
+    /// Hides the panel
+    /// </summary>
+    public async Task Hide()
+    {
+        IsVisible = false;
+        await OnVisibilityChanged.InvokeAsync(false);
+    }
+    
+    /// <summary>
+    /// Toggles panel visibility
+    /// </summary>
+    public async Task Toggle() => await ToggleVisibility();
+    
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _isInteractive = true;
+        }
+
+        if (_isInteractive && AllowDrag && IsVisible)
+        {
+            try
+            {
+                if (_jsModule == null)
+                {
+                    _jsModule = await JSRuntime.InvokeAsync<IJSObjectReference>(
+                        "import", "./_content/Xbim.WexBlazor/js/propertiesPanelDrag.js");
+                }
+                
+                await _jsModule.InvokeVoidAsync("initializeDrag", _panelId);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error initializing drag: {ex.Message}");
+            }
+        }
+    }
+    
+    public void Dispose()
+    {
+        if (Viewer != null && _isSubscribed)
+        {
+            Viewer.Pick -= OnPick;
+            Viewer.SelectionChanged -= OnSelectionChanged;
+        }
+    }
+    
+    public async ValueTask DisposeAsync()
+    {
+        Dispose();
+        
+        if (_jsModule != null)
+        {
+            try
+            {
+                await _jsModule.InvokeVoidAsync("disposeDrag", _panelId);
+                await _jsModule.DisposeAsync();
+            }
+            catch { }
+        }
+    }
+}
+

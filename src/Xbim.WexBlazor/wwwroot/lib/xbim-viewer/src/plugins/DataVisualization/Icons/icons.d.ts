@@ -1,0 +1,35 @@
+import { Viewer } from "../../../viewer";
+import { IPlugin } from "../../plugin";
+import { Icon } from "./icon";
+export declare class Icons implements IPlugin {
+    private _viewer;
+    private _icons;
+    private _floatdetails;
+    private _floatTitle;
+    private _floatBody;
+    private _instances;
+    private _selectedIcon;
+    private _floatingDetailsEnabled;
+    private _iconsCount;
+    init(viewer: Viewer): void;
+    addIcon(icon: Icon): void;
+    updateIconsLocations(): void;
+    setFloatingDetailsState(enabled: boolean): void;
+    moveIconTo(icon: Icon, location: Float32Array, speed: number): void;
+    private processMovementQueue;
+    private onIconClicked;
+    private closeFloatingBox;
+    private render;
+    private addStyles;
+    private getId;
+    private hashString;
+    private cantorPairing;
+    private canBeRendered;
+    private pointPlaneRelation;
+    private transformPlane;
+    onBeforeDraw(width: number, height: number): void;
+    onAfterDraw(width: number, height: number): void;
+    onBeforeDrawId(): void;
+    onAfterDrawId(): void;
+    onAfterDrawModelId(): void;
+}

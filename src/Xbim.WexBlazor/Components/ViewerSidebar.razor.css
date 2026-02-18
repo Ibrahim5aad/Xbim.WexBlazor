@@ -1,0 +1,194 @@
+﻿.viewer-sidebar {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    display: flex;
+    z-index: 1000;
+}
+
+.viewer-sidebar.sidebar-left {
+    left: 0;
+    flex-direction: row;
+}
+
+.viewer-sidebar.sidebar-right {
+    right: 0;
+    flex-direction: row-reverse;
+}
+
+.sidebar-icons {
+    display: flex;
+    flex-direction: column;
+    background: var(--Xbim-bg-panel, #1e1e2e);
+    border-right: 1px solid var(--Xbim-border-primary, #333);
+    padding: 8px 4px;
+    gap: 4px;
+    z-index: 10;
+    height: 100%;
+}
+
+.sidebar-right .sidebar-icons {
+    border-right: none;
+    border-left: 1px solid var(--Xbim-border-primary, #333);
+}
+
+.sidebar-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border: none;
+    background: transparent;
+    color: var(--Xbim-text-secondary, #888);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    border-radius: 6px;
+    position: relative;
+}
+
+.sidebar-icon:hover {
+    color: var(--Xbim-text-primary, #fff);
+    background: var(--Xbim-bg-hover, rgba(255, 255, 255, 0.1));
+}
+
+.sidebar-icon.active {
+    color: var(--Xbim-accent-primary, #4da3ff);
+    background: var(--Xbim-accent-primary-bg, rgba(77, 163, 255, 0.15));
+}
+
+.sidebar-icon i {
+    font-size: 1.2rem;
+}
+
+.sidebar-panels {
+    position: relative;
+    height: 100%;
+}
+
+.sidebar-panels.overlay {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 48px;
+}
+
+.sidebar-right .sidebar-panels.overlay {
+    left: auto;
+    right: 48px;
+}
+
+.sidebar-panels.docked {
+    position: relative;
+}
+
+::deep .sidebar-panel {
+    display: none;
+    flex-direction: column;
+    background: var(--Xbim-bg-panel, #1e1e2e);
+    border-right: 1px solid var(--Xbim-border-primary, #333);
+    height: 100%;
+    overflow: hidden;
+    box-shadow: 4px 0 16px rgba(0, 0, 0, 0.4);
+}
+
+.sidebar-right ::deep .sidebar-panel {
+    border-right: none;
+    border-left: 1px solid var(--Xbim-border-primary, #333);
+    box-shadow: -4px 0 16px rgba(0, 0, 0, 0.4);
+}
+
+.sidebar-panels.docked ::deep .sidebar-panel {
+    box-shadow: none;
+}
+
+::deep .sidebar-panel.open {
+    display: flex;
+}
+
+::deep .sidebar-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 12px;
+    background: var(--Xbim-bg-secondary, #252535);
+    border-bottom: 1px solid var(--Xbim-border-primary, #333);
+    flex-shrink: 0;
+    min-height: 44px;
+}
+
+::deep .sidebar-panel-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: var(--Xbim-text-primary, #fff);
+    white-space: nowrap;
+}
+
+::deep .sidebar-panel-title i {
+    color: var(--Xbim-accent-primary, #4da3ff);
+    font-size: 1rem;
+}
+
+::deep .sidebar-panel-actions {
+    display: flex;
+    gap: 2px;
+}
+
+::deep .sidebar-panel-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border: none;
+    background: transparent;
+    color: var(--Xbim-text-secondary, #888);
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.15s ease;
+}
+
+::deep .sidebar-panel-btn:hover {
+    color: var(--Xbim-text-primary, #fff);
+    background: var(--Xbim-bg-hover, rgba(255, 255, 255, 0.1));
+}
+
+::deep .sidebar-panel-content {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+::deep .sidebar-panel-content > * {
+    height: 100%;
+}
+
+::deep .sidebar-panel-resize-handle {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background: transparent;
+    cursor: ew-resize;
+    z-index: 100;
+    transition: background 0.15s ease;
+}
+
+::deep .sidebar-panel-resize-handle:hover {
+    background: var(--Xbim-accent-primary, #4da3ff);
+}
+
+::deep .sidebar-panel-resize-handle.resize-right {
+    right: -2px;
+}
+
+::deep .sidebar-panel-resize-handle.resize-left {
+    left: -2px;
+}
+
+::deep .sidebar-panel.docked {
+    position: relative;
+}

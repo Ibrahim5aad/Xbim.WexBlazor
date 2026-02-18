@@ -1,0 +1,169 @@
+﻿@using Xbim.WexBlazor.Models
+@using Microsoft.JSInterop
+@namespace Xbim.WexBlazor.Components
+@inject IJSRuntime JSRuntime
+@implements IAsyncDisposable
+
+<CascadingValue Value="this" IsFixed="true">
+    <div class="viewer-sidebar @(Position == SidebarPosition.Left ? "sidebar-left" : "sidebar-right")" @ref="_sidebarElement">
+        <div class="sidebar-icons">
+            @foreach (var panel in _panels)
+            {
+                <button class="sidebar-icon @(panel.IsOpen ? "active" : "")"
+                        @onclick="() => TogglePanel(panel)"
+                        title="@panel.Title">
+                    <i class="bi @panel.Icon"></i>
+                </button>
+            }
+        </div>
+        
+        <div class="sidebar-panels @(_isDocked ? "docked" : "overlay") @(_hasOpenPanel ? "has-open" : "")">
+            @ChildContent
+        </div>
+    </div>
+</CascadingValue>
+
+@code {
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+    
+    [Parameter]
+    public SidebarPosition Position { get; set; } = SidebarPosition.Left;
+    
+    [Parameter]
+    public bool DefaultDocked { get; set; } = false;
+    
+    [Parameter]
+    public EventCallback<bool> OnDockedChanged { get; set; }
+    
+    private List<SidebarPanelInfo> _panels = new();
+    private bool _isDocked = false;
+    private bool _hasOpenPanel => _panels.Any(p => p.IsOpen);
+    private ElementReference _sidebarElement;
+    private bool _isInitialized = false;
+    
+    protected override void OnInitialized()
+    {
+        _isDocked = DefaultDocked;
+    }
+    
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _isInitialized = true;
+        }
+        
+        if (_isInitialized)
+        {
+            await UpdateViewerPaddingAsync();
+        }
+    }
+    
+    internal void RegisterPanel(SidebarPanelInfo panel)
+    {
+        if (!_panels.Contains(panel))
+        {
+            _panels.Add(panel);
+            StateHasChanged();
+        }
+    }
+    
+    internal void UnregisterPanel(SidebarPanelInfo panel)
+    {
+        _panels.Remove(panel);
+        StateHasChanged();
+    }
+    
+    internal void NotifyPanelChanged()
+    {
+        StateHasChanged();
+    }
+    
+    private async Task TogglePanel(SidebarPanelInfo panel)
+    {
+        if (panel.IsOpen)
+        {
+            panel.IsOpen = false;
+        }
+        else
+        {
+            foreach (var p in _panels)
+            {
+                p.IsOpen = p == panel;
+            }
+        }
+        StateHasChanged();
+        await UpdateViewerPaddingAsync();
+    }
+    
+    public async Task SetDocked(bool docked)
+    {
+        _isDocked = docked;
+        await OnDockedChanged.InvokeAsync(docked);
+        StateHasChanged();
+        await UpdateViewerPaddingAsync();
+    }
+    
+    public async Task ToggleDocked()
+    {
+        await SetDocked(!_isDocked);
+    }
+    
+    internal async Task UpdateViewerPaddingAsync()
+    {
+        if (!_isInitialized)
+            return;
+
+        try
+        {
+            var openPanel = _panels.FirstOrDefault(p => p.IsOpen);
+            var panelWidth = (_isDocked && openPanel != null) ? openPanel.Width + 48 : 0;
+            
+            var side = Position == SidebarPosition.Left ? "left" : "right";
+            var leftOffset = Position == SidebarPosition.Left ? panelWidth / 2 : 0;
+            var rightOffset = Position == SidebarPosition.Right ? -panelWidth / 2 : 0;
+            
+            await JSRuntime.InvokeVoidAsync("eval", $@"
+                (function() {{
+                    var sidebar = document.querySelector('.viewer-sidebar');
+                    if (sidebar) {{
+                        var container = sidebar.closest('.Xbim-viewer-container');
+                        var wrapper = container?.querySelector('.Xbim-canvas-wrapper');
+                        if (wrapper && container) {{
+                            wrapper.style.{side} = '{panelWidth}px';
+                            container.style.setProperty('--sidebar-left-offset', '{leftOffset}px');
+                            container.style.setProperty('--sidebar-right-offset', '{rightOffset}px');
+                            setTimeout(function() {{
+                                window.dispatchEvent(new Event('resize'));
+                            }}, 250);
+                        }}
+                    }}
+                }})();
+            ");
+        }
+        catch { }
+    }
+    
+    public bool IsDocked => _isDocked;
+    
+    public async ValueTask DisposeAsync()
+    {
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("eval", @"
+                (function() {
+                    var container = document.querySelector('.Xbim-viewer-container');
+                    var wrapper = container?.querySelector('.Xbim-canvas-wrapper');
+                    if (wrapper && container) {
+                        wrapper.style.left = '0';
+                        wrapper.style.right = '0';
+                        container.style.setProperty('--sidebar-left-offset', '0px');
+                        container.style.setProperty('--sidebar-right-offset', '0px');
+                    }
+                })();
+            ");
+        }
+        catch { }
+    }
+}

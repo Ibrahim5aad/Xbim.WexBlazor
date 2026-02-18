@@ -1,0 +1,243 @@
+﻿@page "/"
+@page "/Xbim-viewer"
+@using Xbim.WexBlazor.Components
+@using Xbim.WexBlazor.Components.BuiltInButtons
+@using Xbim.WexBlazor.Interop
+@using Xbim.WexBlazor.Models
+@using Xbim.WexBlazor.Services
+@using Microsoft.AspNetCore.Components.Forms
+@implements IDisposable
+@inject IJSRuntime JSRuntime
+@inject ThemeService ThemeService
+
+<PageTitle>Xbim Viewer</PageTitle>
+
+
+<XbimViewer @ref="_viewer"
+                         Id="XbimViewer"
+                         Width="100%"
+                         Height="600"
+                         BackgroundColor="@ThemeService.CurrentBackgroundColor"
+                         ContainerStyle="width: 100%; height: 100%; position: relative;"
+                         OnViewerInitialized="HandleViewerInitialized"
+                         OnModelLoaded="HandleModelLoaded"
+                         >
+
+        <FileLoaderPanel @bind-IsVisible="_showFileLoader"
+                         AllowIfcFiles="false"
+                         DemoModels="@_demoModels"
+                         OnError="HandleLoaderError" />
+
+        @if (_viewer != null)
+        {
+            <ModelManagerPanel IsVisible="@_showModelManager"
+                               OnLoadModel="ShowFileLoader" />
+
+            <ViewerToolbar Items="@_toolbarItems"
+                           Position="@_toolbarPosition"
+                           Alignment="@_toolbarAlignment" />
+
+            <ViewerSidebar Position="SidebarPosition.Left">
+                    <SidebarPanel Icon="bi-info-circle" Title="Properties" @bind-IsOpen="_showPropertiesPanel" Width="320">
+                        <PropertiesPanel ShowHeader="false" />
+                    </SidebarPanel>
+                    <SidebarPanel Icon="bi-diagram-3" Title="Hierarchy" @bind-IsOpen="_showHierarchyPanel" Width="300">
+                        <ModelHierarchyPanel ShowHeader="false" />
+                    </SidebarPanel>
+            </ViewerSidebar>
+        }
+
+</XbimViewer>
+
+@code {
+    private XbimViewer? _viewer;
+    private bool _showFileLoader = true;
+    private bool _showModelManager = true;
+    private bool _showPropertiesPanel = false;
+    private bool _showHierarchyPanel = false;
+    
+    private bool _gridActive = false;
+    private bool _interactivePluginsInitialized = false;
+    private SectionBoxPlugin? _sectionBoxPlugin;
+    private GridPlugin? _gridPlugin;
+    private ClippingPlanePlugin? _clippingPlanePlugin;
+    
+    private List<ToolbarItemBase> _toolbarItems = new();
+    private ToolbarPosition _toolbarPosition = ToolbarPosition.Bottom;
+    private ToolbarAlignment _toolbarAlignment = ToolbarAlignment.Center;
+    private ToolbarButton? _themeButton;
+    
+    private List<DemoModel> _demoModels = new()
+    {
+        new DemoModel
+        {
+            Name = "Four Walls",
+            Path = "models/FourWalls.wexbim",
+            Description = "A simple building model with four walls"
+        },
+        new DemoModel
+        {
+            Name = "Sample House",
+            Path = "models/SampleHouse.wexbim",
+            Description = "A sample house model"
+        }
+    };
+    
+    protected override void OnInitialized()
+    {
+        ThemeService.OnThemeChanged += ApplyTheme;
+        base.OnInitialized();
+    }
+    
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await ApplyThemeAsync();
+        }
+        await base.OnAfterRenderAsync(firstRender);
+    }
+    
+    private void ApplyTheme()
+    {
+        if (_themeButton != null)
+        {
+            _themeButton.Icon = GetThemeIcon();
+        }
+        InvokeAsync(ApplyThemeAsync);
+    }
+    
+    private async Task ApplyThemeAsync()
+    {
+        await ThemeService.ApplyAsync(JSRuntime);
+        
+        if (_viewer != null)
+        {
+            await ThemeService.ApplyToViewerAsync(_viewer, _gridActive ? _gridPlugin : null);
+        }
+        
+        StateHasChanged();
+    }
+    
+    private async Task HandleViewerInitialized(string viewerId)
+    {
+        InitializeToolbar();
+        
+        if (_viewer != null)
+        {
+            await ThemeService.ApplyToViewerAsync(_viewer);
+        }
+        
+        var navigationCubePlugin = new NavigationCubePlugin()
+        {
+            Ratio = 0.02,
+            PassiveAlpha = 1,
+            ActiveAlpha = 1
+        };
+        await _viewer!.AddPluginAsync(navigationCubePlugin);
+        
+        _gridPlugin = new GridPlugin
+        {
+            Factor = 1.5,
+            ZFactor = 20,
+            NumberOfLines = 20,
+            Color = ThemeService.CurrentGridColor
+        };
+        await _viewer!.AddPluginAsync(_gridPlugin);
+        _gridActive = true;
+        
+        await InvokeAsync(StateHasChanged);
+    }
+    
+    private void InitializeToolbar()
+    {
+        if (_viewer == null) return;
+        
+        _themeButton = new ToolbarButton
+        {
+            Icon = GetThemeIcon(),
+            Tooltip = "Toggle Theme",
+            OnClick = EventCallback.Factory.Create(this, ToggleTheme)
+        };
+        
+        _toolbarItems = new List<ToolbarItemBase>
+        {
+            ViewerBuiltInButtons.CreatePerspectiveToggle(_viewer, startWithPerspective: true),
+            ViewerBuiltInButtons.CreateZoomFitButton(_viewer),
+            ViewerBuiltInButtons.CreateResetViewButton(_viewer),
+            ViewerBuiltInButtons.CreateViewsDropdown(_viewer),
+            ViewerBuiltInButtons.CreateNavigationButtons(_viewer),
+            ViewerBuiltInButtons.CreateXRayToggle(_viewer),
+            ViewerBuiltInButtons.CreateHideToggle(_viewer),
+            ViewerBuiltInButtons.CreateIsolateToggle(_viewer),
+            ViewerBuiltInButtons.CreateClearSelectionButton(_viewer),
+            ViewerBuiltInButtons.CreateSectionBoxButtons(_viewer, () => _sectionBoxPlugin, "Box", StateHasChanged),
+            ViewerBuiltInButtons.CreateClippingPlaneButtons(_viewer, () => _clippingPlanePlugin, "Plane", StateHasChanged),
+            _themeButton
+        };
+    }
+    
+    private string GetThemeIcon()
+    {
+        return ThemeService.CurrentTheme == ViewerTheme.Light 
+            ? "bi-sun" 
+            : "bi-moon-stars";
+    }
+
+    private async Task ToggleTheme()
+    {
+        ThemeService.ToggleTheme();
+        await Task.CompletedTask;
+    }
+    
+    private async Task HandleModelLoaded(bool success)
+    {
+        if (success)
+        {
+            // Initialize interactive plugins after first model load (they need geometry)
+            if (!_interactivePluginsInitialized && _viewer != null)
+            {
+                _sectionBoxPlugin = new SectionBoxPlugin
+                {
+                    IsStopped = true
+                };
+                await _viewer.AddPluginAsync(_sectionBoxPlugin);
+                
+                _clippingPlanePlugin = new ClippingPlanePlugin
+                {
+                    IsStopped = true
+                };
+                await _viewer.AddPluginAsync(_clippingPlanePlugin);
+                
+                _interactivePluginsInitialized = true;
+            }
+            
+            await _viewer.ZoomFitAsync();
+        }
+        await InvokeAsync(StateHasChanged);
+    }
+    
+    private void ShowFileLoader()
+    {
+        _showFileLoader = true;
+        StateHasChanged();
+    }
+
+    private void HandleLoaderError(string error)
+    {
+        Console.WriteLine($"Loader error: {error}");
+    }
+    
+    private async Task Reset()
+    {
+        if (_viewer != null)
+        {
+            await _viewer.ResetAsync();
+        }
+    }
+    
+    public void Dispose()
+    {
+        ThemeService.OnThemeChanged -= ApplyTheme;
+    }
+} 

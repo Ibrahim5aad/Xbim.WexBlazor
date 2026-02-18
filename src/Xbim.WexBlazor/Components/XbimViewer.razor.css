@@ -1,0 +1,25 @@
+﻿.Xbim-viewer-container {
+    display: block;
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    position: relative;
+    min-width: 100px;
+    min-height: 100px;
+}
+
+.Xbim-canvas-wrapper {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    transition: left 0.2s ease, right 0.2s ease;
+}
+
+canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+} 

@@ -1,0 +1,1 @@
+export declare const depth_vertex_shader = "attribute highp vec2 point;\n\nvarying vec2 position;\n\nvoid main(void) {\n float x = (point.x * 2.0) - 1.0;\n float y = (point.y * 2.0) - 1.0;\n gl_Position = vec4(x, y, 0.0, 1.0);\n position = point;\n}";

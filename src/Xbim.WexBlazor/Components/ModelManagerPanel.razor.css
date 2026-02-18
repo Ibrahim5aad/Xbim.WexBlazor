@@ -1,0 +1,335 @@
+﻿.model-manager-panel {
+    position: absolute;
+    background: var(--Xbim-bg-panel);
+    border-radius: 6px;
+    box-shadow: var(--Xbim-shadow-lg);
+    border: 1px solid var(--Xbim-border-primary);
+    z-index: 1000;
+    min-width: 300px;
+    max-width: 400px;
+    max-height: 500px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.model-manager-panel.minimized {
+    max-height: fit-content;
+    min-width: auto;
+}
+
+.position-top-left {
+    top: 10px;
+    left: 10px;
+}
+
+.position-top-right {
+    top: 10px;
+    right: 10px;
+}
+
+.position-bottom-left {
+    bottom: 10px;
+    left: 10px;
+}
+
+.position-bottom-right {
+    bottom: 10px;
+    right: 10px;
+}
+
+.model-manager-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--Xbim-border-primary);
+    background: var(--Xbim-bg-tertiary);
+}
+
+.model-manager-panel.minimized .model-manager-header {
+    border-bottom: none;
+    min-width: 270px;
+}
+
+.model-manager-title {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--Xbim-text-primary);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.btn-header-action {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 6px 8px;
+    color: var(--Xbim-text-secondary);
+    font-size: 16px;
+    line-height: 1;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+}
+
+.btn-header-action:hover {
+    background: var(--Xbim-accent-primary-bg);
+    color: var(--Xbim-accent-primary);
+}
+
+.btn-close-panel {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    color: var(--Xbim-text-secondary);
+    font-size: 20px;
+    line-height: 1;
+    transition: color 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.model-manager-panel.minimized {
+    .btn-close-panel{
+        font-size: 12px!important;
+    }
+}
+
+.btn-close-panel:hover {
+    color: var(--Xbim-text-primary);
+}
+
+.model-manager-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px;
+}
+
+.model-manager-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    color: var(--Xbim-text-muted);
+    text-align: center;
+}
+
+.model-manager-empty i {
+    font-size: 18px;
+}
+
+.model-manager-empty p {
+    margin: 0 0 16px 0;
+    font-size: 14px;
+}
+
+.btn-empty-action {
+    background: var(--Xbim-accent-primary);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 5px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.btn-empty-action:hover {
+    background: var(--Xbim-accent-primary-hover);
+    transform: translateY(-1px);
+    box-shadow: var(--Xbim-shadow-md);
+}
+
+.model-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.model-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px;
+    background: var(--Xbim-bg-primary);
+    border: 1px solid var(--Xbim-border-primary);
+    border-radius: 6px;
+    transition: all 0.2s;
+}
+
+.model-item:hover {
+    box-shadow: var(--Xbim-shadow-md);
+}
+
+.model-item.model-stopped {
+    opacity: 0.6;
+}
+
+.model-item:not(.model-stopped) {
+}
+
+.model-info {
+    flex: 1;
+    min-width: 0;
+    margin-right: 12px;
+}
+
+.model-name {
+    font-weight: 500;
+    font-size: 13px;
+    color: var(--Xbim-text-primary);
+    margin-bottom: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.model-name i {
+    flex-shrink: 0;
+}
+
+.model-meta {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 11px;
+    color: var(--Xbim-text-secondary);
+}
+
+.model-source-type {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.model-size {
+    color: var(--Xbim-text-tertiary);
+}
+
+.model-status {
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.model-status.status-started {
+    background: var(--Xbim-success-bg);
+    color: var(--Xbim-success);
+}
+
+.model-status.status-stopped {
+    background: var(--Xbim-warning-bg);
+    color: var(--Xbim-warning);
+}
+
+.model-actions {
+    display: flex;
+    gap: 4px;
+}
+
+.btn-model-action {
+    background: var(--Xbim-bg-hover);
+    border: none;
+    border-radius: 4px;
+    padding: 6px 8px;
+    cursor: pointer;
+    color: var(--Xbim-text-secondary);
+    font-size: 14px;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-model-action:hover {
+    background: var(--Xbim-bg-active);
+    color: var(--Xbim-text-primary);
+}
+
+.btn-model-remove:hover {
+    background: var(--Xbim-danger-bg);
+    color: var(--Xbim-danger);
+}
+
+.btn-model-action.btn-stop:hover {
+    background: var(--Xbim-warning-bg);
+    color: var(--Xbim-warning);
+}
+
+.btn-model-action.btn-start:hover {
+    background: var(--Xbim-success-bg);
+    color: var(--Xbim-success);
+}
+
+.model-manager-footer {
+    padding: 8px;
+    border-top: 1px solid var(--Xbim-border-primary);
+    background: var(--Xbim-bg-tertiary);
+}
+
+.btn-panel-action {
+    width: 100%;
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+.btn-unload-all {
+    background: var(--Xbim-danger-bg);
+    color: var(--Xbim-danger);
+}
+
+.btn-unload-all:hover {
+    background: var(--Xbim-danger);
+    color: white;
+}
+
+.model-manager-body::-webkit-scrollbar {
+    width: 6px;
+}
+
+.model-manager-body::-webkit-scrollbar-track {
+    background: var(--Xbim-scrollbar-track);
+    border-radius: 3px;
+}
+
+.model-manager-body::-webkit-scrollbar-thumb {
+    background: var(--Xbim-scrollbar-thumb);
+    border-radius: 3px;
+}
+
+.model-manager-body::-webkit-scrollbar-thumb:hover {
+    background: var(--Xbim-scrollbar-thumb-hover);
+}

@@ -1,0 +1,78 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TypeScriptCompileBlocked>false</TypeScriptCompileBlocked>
+    <TypeScriptToolsVersion>Latest</TypeScriptToolsVersion>
+    <PackageId>Xbim.WexBlazor</PackageId>
+    <RootNamespace>Xbim.WexBlazor</RootNamespace>
+    <AssemblyName>Xbim.WexBlazor</AssemblyName>
+    <Version>1.7.0</Version>
+    <Authors>Ibrahim Saad</Authors>
+    <Company>Ibrahim Saad</Company>
+    <Description>A Blazor wrapper for the xBIM Viewer, providing seamless integration of 3D BIM model visualization in Blazor WebAssembly applications. Includes model management, toolbar system, and plugin support.</Description>
+    <PackageTags>blazor;xbim;bim;3d-viewer;ifc;wexbim;webgl;building-information-modeling</PackageTags>
+    <PackageProjectUrl>https://github.com/Ibrahim5aad/Xbim.WexBlazor</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/Ibrahim5aad/Xbim.WexBlazor</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Xbim.WexBlazor.Tests" />
+  </ItemGroup>
+
+
+  <ItemGroup>
+    <SupportedPlatform Include="browser" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\..\README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Xbim.Api.Client" Version="1.7.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="9.0.1" />
+    <PackageReference Include="Microsoft.TypeScript.MSBuild" Version="5.4.3">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.Web.LibraryManager.Build" Version="3.0.71" />
+    <PackageReference Include="Xbim.Essentials" Version="6.0.563" />
+    <PackageReference Include="Xbim.Geometry.Engine.Interop" Version="6.3.873-netcore" />
+    <PackageReference Include="Xbim.ModelGeometry.Scene" Version="6.3.873-netcore" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <TypeScriptSourceRoot>$(MSBuildProjectDirectory)\wwwroot\ts</TypeScriptSourceRoot>
+    <TypeScriptCompileOnSaveEnabled>True</TypeScriptCompileOnSaveEnabled>
+    <TypeScriptRemoveComments>True</TypeScriptRemoveComments>
+    <TypeScriptSourceMap>True</TypeScriptSourceMap>
+    <TypeScriptTarget>ES2015</TypeScriptTarget>
+    <TypeScriptModuleKind>ES2015</TypeScriptModuleKind>
+    <TypeScriptNoImplicitAny>True</TypeScriptNoImplicitAny>
+    <TypeScriptGeneratesDeclarations>False</TypeScriptGeneratesDeclarations>
+    <TypeScriptOutFile></TypeScriptOutFile>
+    <TypeScriptOutDir>$(MSBuildProjectDirectory)\wwwroot\js</TypeScriptOutDir>
+    <TypeScriptMapRoot></TypeScriptMapRoot>
+    <TypeScriptJSXEmit>None</TypeScriptJSXEmit>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <TypeScriptCompile Include="wwwroot\ts\**\*.ts" />
+  </ItemGroup>
+
+  <Target Name="EnsureJsDirectoryExists" BeforeTargets="BeforeBuild">
+    <MakeDir Directories="$(MSBuildProjectDirectory)\wwwroot\js" />
+  </Target>
+
+</Project>
