@@ -284,7 +284,7 @@ public static class ViewerBuiltInButtons
             ToggledIcon = "bi bi-eye-slash",
             Tooltip = "Show Clipping Control",
             ToggledTooltip = "Hide Clipping Control",
-            IsToggled = true,
+            IsToggled = false,
             Disabled = true,
             OnToggle = EventCallback.Factory.Create<bool>(viewer, async (isVisible) =>
             {
@@ -314,11 +314,14 @@ public static class ViewerBuiltInButtons
                 if (isEnabled)
                 {
                     await viewer.SetPluginStoppedAsync(plugin.Id, false);
+                    await viewer.SetPluginStoppedAsync(plugin.Id, false);
+                    visibilityToggle.IsToggled = true;
                 }
                 else
                 {
                     await viewer.UnclipAsync();
                     await viewer.SetPluginStoppedAsync(plugin.Id, true);
+                    visibilityToggle.IsToggled = false;
                 }
             })
         };
@@ -355,7 +358,7 @@ public static class ViewerBuiltInButtons
             ToggledIcon = "bi bi-eye-slash",
             Tooltip = "Show Section Box Control",
             ToggledTooltip = "Hide Section Box Control",
-            IsToggled = true,
+            IsToggled = false,
             Disabled = true,
             OnToggle = EventCallback.Factory.Create<bool>(viewer, async (isVisible) =>
             {
@@ -385,10 +388,13 @@ public static class ViewerBuiltInButtons
                 if (isEnabled)
                 {
                     await viewer.CreateSectionBoxAsync(plugin.Id);
+                    await viewer.SetPluginStoppedAsync(plugin.Id, false);
+                    visibilityToggle.IsToggled = true;
                 }
                 else
                 {
                     await viewer.ClearSectionBoxAsync(plugin.Id);
+                    visibilityToggle.IsToggled = false;
                 }
             })
         };
