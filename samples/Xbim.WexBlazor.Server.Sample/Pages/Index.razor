@@ -23,7 +23,7 @@
                      Width="100%"
                      Height="600"
                      BackgroundColor="@ThemeService.CurrentBackgroundColor"
-                     ContainerStyle="width: 100%; height: 100%; position: relative;"
+                     ContainerStyle="width: 100%; height: 100vh; position: relative;"
                      OnViewerInitialized="HandleViewerInitialized"
                      OnModelLoaded="HandleModelLoaded">
 
@@ -67,6 +67,22 @@
     private SectionBoxPlugin? _sectionBoxPlugin;
     private GridPlugin? _gridPlugin;
     private ClippingPlanePlugin? _clippingPlanePlugin;
+
+    // Data Visualization plugins
+    private HeatmapPlugin? _heatmapPlugin;
+    private IconsPlugin? _iconsPlugin;
+    private bool _heatmapActive = false;
+    private bool _iconsActive = false;
+    private bool _iconsEnabled = false; // user toggled on, but may not be set up yet
+
+    // Live heatmap simulation
+    private List<(string Id, double Value, int ProductId, int ModelId)> _heatmapSources = new();
+    private Timer? _heatmapTimer;
+    private Random _simRandom = new();
+    private bool _heatmapSimulationRunning = false;
+
+    // Icon-to-heatmap mapping: icon index → heatmap source index
+    private List<int> _iconSourceMap = new();
     
     private List<ToolbarItemBase> _toolbarItems = new();
     private ToolbarPosition _toolbarPosition = ToolbarPosition.Bottom;
@@ -140,15 +156,16 @@
             Color = ThemeService.CurrentGridColor
         };
         await _viewer!.AddPluginAsync(_gridPlugin);
+        await _viewer!.UpdateGridColorAsync(_gridPlugin.Id, ThemeService.CurrentGridColor);
         _gridActive = true;
-        
+
         await InvokeAsync(StateHasChanged);
     }
-    
+
     private void InitializeToolbar()
     {
         if (_viewer == null) return;
-        
+
         _themeButton = new ToolbarButton
         {
             Icon = GetThemeIcon(),
@@ -181,6 +198,18 @@
             },
             ViewerBuiltInButtons.CreateSectionBoxButtons(_viewer, () => _sectionBoxPlugin, "Box", StateHasChanged),
             ViewerBuiltInButtons.CreateClippingPlaneButtons(_viewer, () => _clippingPlanePlugin, "Plane", StateHasChanged),
+            new ToolbarToggleButton
+            {
+                Icon = "bi bi-thermometer-half",
+                Tooltip = "Toggle Heatmap",
+                OnToggle = EventCallback.Factory.Create<bool>(this, ToggleHeatmap)
+            },
+            new ToolbarToggleButton
+            {
+                Icon = "bi bi-pin-map",
+                Tooltip = "Toggle Icons",
+                OnToggle = EventCallback.Factory.Create<bool>(this, ToggleIcons)
+            },
             _themeButton
         };
     }
@@ -216,11 +245,25 @@
                     IsStopped = true
                 };
                 await _viewer.AddPluginAsync(_clippingPlanePlugin);
-                
+
+                // Data Visualization: Heatmap plugin (stopped initially)
+                _heatmapPlugin = new HeatmapPlugin { IsStopped = true };
+                await _viewer.AddPluginAsync(_heatmapPlugin);
+
+                // Data Visualization: Icons plugin (stopped initially)
+                _iconsPlugin = new IconsPlugin { IsStopped = true };
+                await _viewer.AddPluginAsync(_iconsPlugin);
+
                 _interactivePluginsInitialized = true;
             }
             
-            await _viewer.ZoomFitAsync();
+            await _viewer.ShowAsync(ViewerConstants.ViewType.Default);
+
+            // Lock grid to the full model region so it doesn't shrink on isolation
+            if (_gridPlugin != null)
+            {
+                await _viewer.LockGridRegionAsync(_gridPlugin.Id);
+            }
         }
         await InvokeAsync(StateHasChanged);
     }
@@ -236,8 +279,207 @@
         Console.WriteLine($"Loader error: {error}");
     }
     
+    private async Task ToggleHeatmap(bool enabled)
+    {
+        if (_viewer == null || _heatmapPlugin == null) return;
+
+        if (enabled && !_heatmapActive)
+        {
+            await SetupDemoHeatmap();
+            _heatmapActive = true;
+
+            // If icons were toggled on before heatmap, set them up now
+            if (_iconsEnabled && !_iconsActive)
+            {
+                await SetupDemoIcons();
+                _iconsActive = true;
+                await _viewer.SetPluginStoppedAsync(_iconsPlugin!.Id, false);
+            }
+        }
+
+        await _viewer.SetPluginStoppedAsync(_heatmapPlugin.Id, !enabled);
+
+        // Start/stop the live simulation timer
+        if (enabled && !_heatmapSimulationRunning)
+        {
+            _heatmapSimulationRunning = true;
+            _heatmapTimer = new Timer(async _ =>
+            {
+                await InvokeAsync(SimulateHeatmapStep);
+            }, null, 2000, 2000);
+        }
+        else if (!enabled)
+        {
+            _heatmapSimulationRunning = false;
+            _heatmapTimer?.Dispose();
+            _heatmapTimer = null;
+        }
+    }
+
+    private async Task ToggleIcons(bool enabled)
+    {
+        if (_viewer == null || _iconsPlugin == null) return;
+
+        _iconsEnabled = enabled;
+
+        if (enabled && !_iconsActive && _heatmapSources.Count > 0)
+        {
+            await SetupDemoIcons();
+            _iconsActive = true;
+        }
+
+        await _viewer.SetPluginStoppedAsync(_iconsPlugin.Id, !enabled);
+    }
+
+    // Temperature range for the demo (°C)
+    private const double TempMin = 15;
+    private const double TempMax = 35;
+    private const double TempRange = TempMax - TempMin;
+
+    // Normalize a raw temperature to [0, 1] for the heatmap channel
+    private static double Normalize(double temp) => Math.Round((Math.Clamp(temp, TempMin, TempMax) - TempMin) / TempRange, 4);
+
+    private async Task SetupDemoHeatmap()
+    {
+        if (_viewer == null || _heatmapPlugin == null) return;
+
+        // Workaround: the xBIM viewer's ContinuousHeatmapChannel has a clamp bug that
+        // uses raw min/max instead of [0,1]. Setting Min=0, Max=1 and sending
+        // pre-normalized values avoids the issue.
+        var channel = new ContinuousHeatmapChannel
+        {
+            ChannelId = "temperature",
+            DataType = "number",
+            Name = "Temperature",
+            Description = "Simulated surface temperature",
+            Property = "temperature",
+            Unit = "°C",
+            Min = 0,
+            Max = 1,
+            ColorGradient = new[] { "#0000FF", "#00FF00", "#FFFF00", "#FF0000" }
+        };
+        await _viewer.AddHeatmapChannelAsync(_heatmapPlugin.Id, channel);
+
+        // IFC type IDs grouped by expected temperature range
+        var hotTypes = new HashSet<int> { 347 }; // Roof
+        var warmTypes = new HashSet<int> { 452, 453, 1314 }; // Walls
+        var coolTypes = new HashSet<int> { 667, 1316, 213, 1151 }; // Windows, Doors
+        var coldTypes = new HashSet<int> { 99, 1268, 1269 }; // Slabs
+
+        var random = new Random(42);
+        var loadedModels = _viewer.GetLoadedModels();
+        int sourceIndex = 0;
+        _heatmapSources.Clear();
+
+        foreach (var model in loadedModels)
+        {
+            var productTypes = await _viewer.GetProductTypesAsync(model.Key);
+            foreach (var pt in productTypes)
+            {
+                // Pick temperature range based on IFC type
+                double min, max;
+                if (hotTypes.Contains(pt.TypeId))        { min = 30; max = 35; }
+                else if (warmTypes.Contains(pt.TypeId))  { min = 22; max = 28; }
+                else if (coolTypes.Contains(pt.TypeId))  { min = 15; max = 20; }
+                else if (coldTypes.Contains(pt.TypeId))  { min = 18; max = 22; }
+                else                                     { min = 20; max = 26; }
+
+                foreach (var productId in pt.ProductIds)
+                {
+                    var rawTemp = Math.Round(min + random.NextDouble() * (max - min), 1);
+                    var id = $"src-{sourceIndex++}";
+
+                    var source = new HeatmapSource
+                    {
+                        Id = id,
+                        Products = new List<ProductIdentity>
+                        {
+                            new() { Id = productId, Model = model.Key }
+                        },
+                        ChannelId = "temperature",
+                        Value = Normalize(rawTemp)
+                    };
+                    await _viewer.AddHeatmapSourceAsync(_heatmapPlugin.Id, source);
+                    _heatmapSources.Add((id, rawTemp, productId, model.Key));
+                }
+            }
+        }
+
+        await _viewer.RenderHeatmapChannelAsync(_heatmapPlugin.Id, "temperature");
+    }
+
+    private async Task SimulateHeatmapStep()
+    {
+        if (_viewer == null || _heatmapPlugin == null || !_heatmapSimulationRunning) return;
+
+        try
+        {
+            for (int i = 0; i < _heatmapSources.Count; i++)
+            {
+                var (id, current, productId, modelId) = _heatmapSources[i];
+                var delta = (_simRandom.NextDouble() - 0.5) * 3.0; // ±1.5°C
+                var next = Math.Round(Math.Clamp(current + delta, TempMin, TempMax), 1);
+                _heatmapSources[i] = (id, next, productId, modelId);
+                await _viewer.UpdateHeatmapSourceValueAsync(_heatmapPlugin.Id, id, Normalize(next));
+            }
+
+            await _viewer.RenderHeatmapChannelAsync(_heatmapPlugin.Id, "temperature");
+
+            // Update linked icon readouts
+            if (_iconsPlugin != null && _iconSourceMap.Count > 0)
+            {
+                for (int iconIdx = 0; iconIdx < _iconSourceMap.Count; iconIdx++)
+                {
+                    var srcIdx = _iconSourceMap[iconIdx];
+                    var temp = _heatmapSources[srcIdx].Value;
+                    await _viewer.UpdateIconReadoutAsync(_iconsPlugin.Id, iconIdx, $"{temp:F1}°C");
+                }
+            }
+        }
+        catch (ObjectDisposedException)
+        {
+            _heatmapSimulationRunning = false;
+        }
+    }
+
+    private async Task SetupDemoIcons()
+    {
+        if (_viewer == null || _iconsPlugin == null) return;
+        if (_heatmapSources.Count == 0) return;
+
+        _iconSourceMap.Clear();
+        string[] labels = { "Sensor A", "Sensor B", "Sensor C", "Sensor D", "Sensor E" };
+
+        // Pick sources spread evenly across the list so icons cover different product types
+        int count = Math.Min(labels.Length, _heatmapSources.Count);
+        int step = Math.Max(1, _heatmapSources.Count / count);
+
+        for (int i = 0; i < count; i++)
+        {
+            int srcIdx = Math.Min(i * step, _heatmapSources.Count - 1);
+            var src = _heatmapSources[srcIdx];
+
+            var icon = new ViewerIcon
+            {
+                Name = labels[i],
+                Description = "Temperature sensor",
+                ValueReadout = $"{src.Value:F1}°C",
+                Products = new List<ProductIdentity>
+                {
+                    new() { Id = src.ProductId, Model = src.ModelId }
+                }
+            };
+            await _viewer.AddIconAsync(_iconsPlugin.Id, icon);
+            _iconSourceMap.Add(srcIdx);
+        }
+
+        await _viewer.SetFloatingDetailsStateAsync(_iconsPlugin.Id, true);
+    }
+
     public void Dispose()
     {
+        _heatmapSimulationRunning = false;
+        _heatmapTimer?.Dispose();
         ThemeService.OnThemeChanged -= ApplyTheme;
     }
 }

@@ -16,7 +16,7 @@ public class ThemeService
     private string _lightBackgroundColor = "#f0f0f0";
     private string _darkBackgroundColor = "#1a1a2e";
     private double[] _lightGridColor = new[] { 0.0, 0.0, 0.0, 1.0 };
-    private double[] _darkGridColor = new[] { 1.0, 1.0, 1.0, 1.0 };
+    private double[] _darkGridColor = new[] { 0.6, 0.6, 0.6, 0.8 };
     
     /// <summary>
     /// Event fired when theme or colors change.
@@ -255,10 +255,12 @@ public class ThemeService
         await viewer.SetBackgroundColorAsync(CurrentBackgroundColor);
         await viewer.SetHighlightingColorAsync(EffectiveSelectionColor);
         await viewer.SetHoverPickColorAsync(EffectiveHoverColor);
-        
+
         if (gridPlugin != null)
         {
-            gridPlugin.Color = CurrentGridColor;
+            var colour = CurrentGridColor;
+            gridPlugin.Color = colour;
+            await viewer.UpdateGridColorAsync(gridPlugin.Id, colour);
         }
     }
     

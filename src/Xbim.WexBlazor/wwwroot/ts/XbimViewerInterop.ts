@@ -103,6 +103,14 @@ export async function initViewer(canvasId: string): Promise<string | null> {
         viewer.highlightingColour = [72, 73, 208, 255];
         viewer.hoverPickEnabled = true;
 
+        // Re-enforce canvas CSS in case the viewer constructor overrode it
+        canvas.style.display = 'block';
+        canvas.style.width = '100%';
+        canvas.style.height = '100%';
+
+        // Re-sync buffer size after viewer creation (viewer may have changed canvas dimensions)
+        resizeCanvas(canvasId);
+
         const viewerId = `viewer_${viewerIdCounter++}`;
         viewerInstances.set(viewerId, viewer);
         viewerCanvasMap.set(viewerId, canvasId);
@@ -1007,7 +1015,24 @@ export async function addPlugin(viewerId: string, pluginId: string, pluginType: 
         
         // Add plugin to viewer first
         viewer.addPlugin(plugin);
-        
+
+        // Workaround for Icons plugin:
+        // 1) Its render method uses document.getElementById("viewer") to size the overlay.
+        //    Ensure the canvas wrapper carries that id.
+        // 2) The render loop only starts on the viewer "loaded" event, but the plugin is
+        //    typically added after the model is already loaded. Kick the loop manually.
+        if (pluginType === 'Icons') {
+            if (!document.getElementById('viewer')) {
+                const canvas = (viewer as any).canvas as HTMLCanvasElement | undefined;
+                if (canvas?.parentElement) {
+                    canvas.parentElement.id = 'viewer';
+                }
+            }
+            try {
+                window.requestAnimationFrame(() => (plugin as any).render());
+            } catch (_) { /* render may not exist yet */ }
+        }
+
         // Set stopped property after plugin is added to viewer
         if (stoppedValue !== undefined) {
             plugin.stopped = stoppedValue;
@@ -1077,12 +1102,43 @@ export async function setPluginStopped(viewerId: string, pluginId: string, stopp
             return false;
         }
 
-        if ('stopped' in plugin) {
-            plugin.stopped = stopped;
-            return true;
+        const viewer = viewerInstances.get(viewerId);
+
+        // Icons plugin: toggle visibility of the DOM container since it has no built-in stopped support
+        if ((plugin as any)._icons !== undefined) {
+            const iconsContainer = document.getElementById('icons');
+            if (iconsContainer) {
+                iconsContainer.style.display = stopped ? 'none' : '';
+            }
         }
 
-        return false;
+        // Heatmap plugin: reset product styles when stopping, re-render when starting
+        if ((plugin as any)._channels !== undefined && (plugin as any)._sources !== undefined) {
+            if (stopped && viewer) {
+                // Reset all model styles to remove heatmap coloring
+                const models = (viewer as any).activeHandles;
+                if (models) {
+                    for (const handle of models) {
+                        try { (viewer as any).resetStyles(handle.id); } catch (_) {}
+                    }
+                }
+                (viewer as any).draw();
+            } else if (!stopped) {
+                // Re-render all channels when restarting
+                const channels: any[] = (plugin as any)._channels;
+                if (channels) {
+                    for (const ch of channels) {
+                        try { plugin.renderChannel(ch.channelId); } catch (_) {}
+                    }
+                }
+            }
+        }
+
+        if ('stopped' in plugin) {
+            plugin.stopped = stopped;
+        }
+
+        return true;
     } catch (error) {
         console.error(`Error setting plugin stopped state:`, error);
         return false;
@@ -1421,5 +1477,451 @@ export function getAllProductTypes(viewerId: string): Array<{typeId: number, cou
     } catch (error) {
         console.error('Error getting all product types:', error);
         return [];
+    }
+}
+
+// ============================================================
+// Data Visualization: Heatmap Plugin Functions
+// ============================================================
+
+// Helper to get a plugin instance
+function getPluginInstance(viewerId: string, pluginId: string): any | null {
+    const plugins = pluginInstances.get(viewerId);
+    if (!plugins) return null;
+    return plugins.get(pluginId) ?? null;
+}
+
+// Add a heatmap channel to the Heatmap plugin
+export function addHeatmapChannel(
+    viewerId: string,
+    pluginId: string,
+    channelConfig: {
+        channelType: string;
+        channelId: string;
+        dataType: string;
+        name: string;
+        description: string;
+        property: string;
+        unit: string;
+        min?: number;
+        max?: number;
+        colorGradient?: string[];
+        values?: { [value: string]: string };
+        ranges?: Array<{ min: number; max: number; color: string; label: string; priority: number }>;
+        color?: string;
+    }
+): boolean {
+    try {
+        const plugin = getPluginInstance(viewerId, pluginId);
+        if (!plugin) {
+            console.error(`Plugin ${pluginId} not found for viewer ${viewerId}`);
+            return false;
+        }
+
+        const win = window as any;
+        let channel: any;
+
+        switch (channelConfig.channelType) {
+            case 'Continuous': {
+                const Ctor = win.ContinuousHeatmapChannel || win.xbim?.ContinuousHeatmapChannel;
+                if (!Ctor) { console.error('ContinuousHeatmapChannel not found'); return false; }
+                channel = new Ctor(
+                    channelConfig.channelId,
+                    channelConfig.dataType,
+                    channelConfig.name,
+                    channelConfig.description,
+                    channelConfig.property,
+                    channelConfig.unit,
+                    channelConfig.min!,
+                    channelConfig.max!,
+                    channelConfig.colorGradient!
+                );
+                break;
+            }
+            case 'Discrete': {
+                const Ctor = win.DiscreteHeatmapChannel || win.xbim?.DiscreteHeatmapChannel;
+                if (!Ctor) { console.error('DiscreteHeatmapChannel not found'); return false; }
+                channel = new Ctor(
+                    channelConfig.channelId,
+                    channelConfig.dataType,
+                    channelConfig.name,
+                    channelConfig.description,
+                    channelConfig.property,
+                    channelConfig.unit,
+                    channelConfig.values!
+                );
+                break;
+            }
+            case 'ValueRanges': {
+                const ValueRangeCtor = win.ValueRange || win.xbim?.ValueRange;
+                const Ctor = win.ValueRangesHeatmapChannel || win.xbim?.ValueRangesHeatmapChannel;
+                if (!Ctor || !ValueRangeCtor) { console.error('ValueRangesHeatmapChannel or ValueRange not found'); return false; }
+                const ranges = channelConfig.ranges!.map(r =>
+                    new ValueRangeCtor(r.min, r.max, r.color, r.label, r.priority)
+                );
+                channel = new Ctor(
+                    channelConfig.channelId,
+                    channelConfig.dataType,
+                    channelConfig.name,
+                    channelConfig.description,
+                    channelConfig.property,
+                    channelConfig.unit,
+                    ranges
+                );
+                break;
+            }
+            case 'Constant': {
+                const Ctor = win.ConstantColorChannel || win.xbim?.ConstantColorChannel;
+                if (!Ctor) { console.error('ConstantColorChannel not found'); return false; }
+                channel = new Ctor(
+                    channelConfig.channelId,
+                    channelConfig.dataType,
+                    channelConfig.name,
+                    channelConfig.description,
+                    channelConfig.property,
+                    channelConfig.unit,
+                    channelConfig.color!
+                );
+                break;
+            }
+            default:
+                console.error(`Unknown channel type: ${channelConfig.channelType}`);
+                return false;
+        }
+
+        plugin.addChannel(channel);
+        return true;
+    } catch (error) {
+        console.error('Error adding heatmap channel:', error);
+        return false;
+    }
+}
+
+// Add a heatmap source to the Heatmap plugin
+export function addHeatmapSource(
+    viewerId: string,
+    pluginId: string,
+    sourceConfig: {
+        id: string;
+        products: Array<{ id: number; model: number }>;
+        channelId: string;
+        value: any;
+    }
+): boolean {
+    try {
+        const plugin = getPluginInstance(viewerId, pluginId);
+        if (!plugin) {
+            console.error(`Plugin ${pluginId} not found for viewer ${viewerId}`);
+            return false;
+        }
+
+        const win = window as any;
+        const HeatmapSourceCtor = win.HeatmapSource || win.xbim?.HeatmapSource;
+        if (!HeatmapSourceCtor) { console.error('HeatmapSource not found'); return false; }
+
+        const source = new HeatmapSourceCtor(
+            sourceConfig.id,
+            sourceConfig.products,
+            sourceConfig.channelId,
+            sourceConfig.value
+        );
+
+        plugin.addSource(source);
+        return true;
+    } catch (error) {
+        console.error('Error adding heatmap source:', error);
+        return false;
+    }
+}
+
+// Render a specific heatmap channel
+export function renderHeatmapChannel(viewerId: string, pluginId: string, channelId: string): boolean {
+    try {
+        const plugin = getPluginInstance(viewerId, pluginId);
+        if (!plugin) {
+            console.error(`Plugin ${pluginId} not found for viewer ${viewerId}`);
+            return false;
+        }
+
+        plugin.renderChannel(channelId);
+        return true;
+    } catch (error) {
+        console.error('Error rendering heatmap channel:', error);
+        return false;
+    }
+}
+
+// Render a specific heatmap source
+export function renderHeatmapSource(viewerId: string, pluginId: string, sourceId: string): boolean {
+    try {
+        const plugin = getPluginInstance(viewerId, pluginId);
+        if (!plugin) {
+            console.error(`Plugin ${pluginId} not found for viewer ${viewerId}`);
+            return false;
+        }
+
+        plugin.renderSource(sourceId);
+        return true;
+    } catch (error) {
+        console.error('Error rendering heatmap source:', error);
+        return false;
+    }
+}
+
+// Update an existing heatmap source's value in-place
+export function updateHeatmapSourceValue(
+    viewerId: string,
+    pluginId: string,
+    sourceId: string,
+    newValue: any
+): boolean {
+    try {
+        const plugin = getPluginInstance(viewerId, pluginId);
+        if (!plugin) {
+            console.error(`Plugin ${pluginId} not found for viewer ${viewerId}`);
+            return false;
+        }
+
+        const sources: any[] = plugin._sources;
+        const source = sources?.find((s: any) => s.id === sourceId);
+        if (!source) {
+            console.error(`Source ${sourceId} not found in plugin ${pluginId}`);
+            return false;
+        }
+
+        source.value = newValue;
+        return true;
+    } catch (error) {
+        console.error('Error updating heatmap source value:', error);
+        return false;
+    }
+}
+
+// ============================================================
+// Data Visualization: Icons Plugin Functions
+// ============================================================
+
+// Add an icon to the Icons plugin
+export function addIcon(
+    viewerId: string,
+    pluginId: string,
+    iconConfig: {
+        name: string;
+        description: string;
+        valueReadout: string | null;
+        products: Array<{ id: number; model: number }> | null;
+        imageData: string | null;
+        location: number[] | null;
+        width: number | null;
+        height: number | null;
+    }
+): boolean {
+    try {
+        const plugin = getPluginInstance(viewerId, pluginId);
+        if (!plugin) {
+            console.error(`Plugin ${pluginId} not found for viewer ${viewerId}`);
+            return false;
+        }
+
+        const win = window as any;
+        const IconCtor = win.Icon || win.xbim?.Icon;
+        if (!IconCtor) { console.error('Icon not found'); return false; }
+
+        const location = iconConfig.location
+            ? new Float32Array(iconConfig.location)
+            : null;
+
+        const icon = new IconCtor(
+            iconConfig.name,
+            iconConfig.description,
+            iconConfig.valueReadout,
+            iconConfig.products,
+            iconConfig.imageData,
+            location,
+            iconConfig.width,
+            iconConfig.height
+        );
+
+        plugin.addIcon(icon);
+        return true;
+    } catch (error) {
+        console.error('Error adding icon:', error);
+        return false;
+    }
+}
+
+// Update all icon locations (recalculate from product bounding boxes)
+export function updateIconsLocations(viewerId: string, pluginId: string): boolean {
+    try {
+        const plugin = getPluginInstance(viewerId, pluginId);
+        if (!plugin) {
+            console.error(`Plugin ${pluginId} not found for viewer ${viewerId}`);
+            return false;
+        }
+
+        plugin.updateIconsLocations();
+        return true;
+    } catch (error) {
+        console.error('Error updating icon locations:', error);
+        return false;
+    }
+}
+
+// Enable or disable floating detail tooltips on icon hover
+export function setFloatingDetailsState(viewerId: string, pluginId: string, enabled: boolean): boolean {
+    try {
+        const plugin = getPluginInstance(viewerId, pluginId);
+        if (!plugin) {
+            console.error(`Plugin ${pluginId} not found for viewer ${viewerId}`);
+            return false;
+        }
+
+        plugin.setFloatingDetailsState(enabled);
+        return true;
+    } catch (error) {
+        console.error('Error setting floating details state:', error);
+        return false;
+    }
+}
+
+// Update an existing icon's valueReadout text (the label shown on the icon)
+export function updateIconReadout(
+    viewerId: string,
+    pluginId: string,
+    iconIndex: number,
+    readout: string
+): boolean {
+    try {
+        const plugin = getPluginInstance(viewerId, pluginId);
+        if (!plugin) {
+            console.error(`Plugin ${pluginId} not found for viewer ${viewerId}`);
+            return false;
+        }
+
+        // Icons are stored in _instances object keyed by hashed IDs
+        const instances = (plugin as any)._instances;
+        if (!instances) {
+            console.error(`No _instances found in plugin ${pluginId}`);
+            return false;
+        }
+
+        const keys = Object.getOwnPropertyNames(instances);
+        if (iconIndex < 0 || iconIndex >= keys.length) {
+            console.error(`Icon at index ${iconIndex} not found (${keys.length} icons exist)`);
+            return false;
+        }
+
+        const icon = instances[keys[iconIndex]];
+        if (icon) {
+            icon.valueReadout = readout;
+        }
+        return true;
+    } catch (error) {
+        console.error('Error updating icon readout:', error);
+        return false;
+    }
+}
+
+// ============================================================
+// Grid Region Lock
+// ============================================================
+
+// Lock the grid plugin to use the current full model region,
+// so it doesn't resize when elements are isolated.
+export function lockGridRegion(viewerId: string, pluginId: string): boolean {
+    try {
+        const viewer = viewerInstances.get(viewerId);
+        if (!viewer) return false;
+
+        const plugins = pluginInstances.get(viewerId);
+        if (!plugins) return false;
+
+        const grid = plugins.get(pluginId);
+        if (!grid) return false;
+
+        // Capture the current full model region
+        const region = viewer.getMergedRegion();
+        if (!region || region.population < 1) return false;
+
+        // Deep-copy the region data
+        const lockedRegion = {
+            bbox: Float32Array.from(region.bbox),
+            population: region.population,
+            centre: region.centre ? Float32Array.from(region.centre) : undefined
+        };
+
+        // Store the original onAfterDraw
+        const originalDraw = grid.onAfterDraw.bind(grid);
+
+        // Patch onAfterDraw to temporarily swap getMergedRegion during the grid's draw
+        grid.onAfterDraw = function (width: number, height: number) {
+            const realFn = viewer.getMergedRegion;
+            (viewer as any).getMergedRegion = () => lockedRegion;
+            try {
+                originalDraw(width, height);
+            } finally {
+                (viewer as any).getMergedRegion = realFn;
+            }
+        };
+
+        console.log(`Grid region locked for plugin ${pluginId}`);
+        return true;
+    } catch (error) {
+        console.error('Error locking grid region:', error);
+        return false;
+    }
+}
+
+/**
+ * Updates a grid plugin's colour and patches the blend mode so that
+ * light-coloured grids (for dark backgrounds) render correctly.
+ *
+ * The stock xBIM Grid uses blendFunc(ONE_MINUS_DST_ALPHA, ONE_MINUS_SRC_ALPHA)
+ * which can only darken the background – white lines on a dark canvas are
+ * impossible with that blend equation. We replace it with standard alpha
+ * blending (SRC_ALPHA, ONE_MINUS_SRC_ALPHA) which works for any colour.
+ */
+export function updateGridColor(viewerId: string, pluginId: string, colour: number[]): boolean {
+    try {
+        const viewer = viewerInstances.get(viewerId);
+        if (!viewer) return false;
+
+        const plugins = pluginInstances.get(viewerId);
+        if (!plugins) return false;
+
+        const grid = plugins.get(pluginId);
+        if (!grid) return false;
+
+        // Update the colour property (read by the shader uniform each frame)
+        grid.colour = colour;
+
+        // Patch the blend mode once – subsequent calls only update the colour
+        if (!(grid as any)._blendPatched) {
+            const currentDraw = grid.onAfterDraw.bind(grid);
+
+            grid.onAfterDraw = function (width: number, height: number) {
+                const gl = (viewer as any).gl as WebGLRenderingContext;
+
+                // Temporarily replace blendFunc so the grid's internal call
+                // uses standard alpha blending instead of the original equation
+                const realBlendFunc = gl.blendFunc.bind(gl);
+                gl.blendFunc = function (_s: number, _d: number) {
+                    realBlendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+                };
+
+                try {
+                    currentDraw(width, height);
+                } finally {
+                    gl.blendFunc = realBlendFunc;
+                }
+            };
+
+            (grid as any)._blendPatched = true;
+        }
+
+        return true;
+    } catch (error) {
+        console.error('Error updating grid color:', error);
+        return false;
     }
 }

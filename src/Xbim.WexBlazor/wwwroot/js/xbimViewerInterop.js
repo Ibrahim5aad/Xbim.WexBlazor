@@ -1,4 +1,4 @@
-﻿var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
         function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
@@ -33,6 +33,8 @@ const XBIM_SCRIPT_PATH = '_content/Xbim.WexBlazor/lib/xbim-viewer/index.js';
 const viewerInstances = new Map();
 const eventHandlers = new Map();
 const loadedModels = new Map();
+const resizeObservers = new Map();
+const viewerCanvasMap = new Map();
 let viewerIdCounter = 0;
 let ViewerCtor = null;
 let xbimModule = null;
@@ -74,14 +76,21 @@ export function initViewer(canvasId) {
                 console.error("Viewer class is not defined. xBIM library may not be properly loaded.");
                 return null;
             }
+            resizeCanvas(canvasId);
             const viewer = new ViewerCtor(canvasId, (message) => {
                 console.error(message);
             });
             viewer.background = [0, 0, 0, 0];
             viewer.highlightingColour = [72, 73, 208, 255];
             viewer.hoverPickEnabled = true;
+            canvas.style.display = 'block';
+            canvas.style.width = '100%';
+            canvas.style.height = '100%';
+            resizeCanvas(canvasId);
             const viewerId = `viewer_${viewerIdCounter++}`;
             viewerInstances.set(viewerId, viewer);
+            viewerCanvasMap.set(viewerId, canvasId);
+            setupResizeObserver(canvasId, viewerId);
             return viewerId;
         }
         catch (error) {
@@ -89,6 +98,62 @@ export function initViewer(canvasId) {
             return null;
         }
     });
+}
+export function resizeCanvas(canvasId) {
+    try {
+        const canvas = document.getElementById(canvasId);
+        if (!canvas) {
+            console.error(`Canvas element with id ${canvasId} not found`);
+            return false;
+        }
+        const rect = canvas.getBoundingClientRect();
+        const displayWidth = Math.floor(rect.width);
+        const displayHeight = Math.floor(rect.height);
+        const dpr = window.devicePixelRatio || 1;
+        const bufferWidth = Math.floor(displayWidth * dpr);
+        const bufferHeight = Math.floor(displayHeight * dpr);
+        if (canvas.width !== bufferWidth || canvas.height !== bufferHeight) {
+            canvas.width = bufferWidth;
+            canvas.height = bufferHeight;
+            console.log(`Canvas ${canvasId} resized to ${bufferWidth}x${bufferHeight} (display: ${displayWidth}x${displayHeight}, dpr: ${dpr})`);
+            return true;
+        }
+        return false;
+    }
+    catch (error) {
+        console.error('Error resizing canvas:', error);
+        return false;
+    }
+}
+function setupResizeObserver(canvasId, viewerId) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas)
+        return;
+    const wrapper = canvas.parentElement;
+    if (!wrapper)
+        return;
+    const existingObserver = resizeObservers.get(viewerId);
+    if (existingObserver) {
+        existingObserver.disconnect();
+    }
+    const observer = new ResizeObserver((entries) => {
+        for (const entry of entries) {
+            const resized = resizeCanvas(canvasId);
+            if (resized) {
+                const viewer = viewerInstances.get(viewerId);
+                if (viewer) {
+                    try {
+                        viewer.draw();
+                    }
+                    catch (e) {
+                    }
+                }
+            }
+        }
+    });
+    observer.observe(wrapper);
+    resizeObservers.set(viewerId, observer);
+    console.log(`ResizeObserver set up for viewer ${viewerId} (canvas ${canvasId})`);
 }
 export function loadModel(viewerId, modelUrl, tag) {
     return __awaiter(this, void 0, void 0, function* () {
@@ -774,6 +839,18 @@ export function addPlugin(viewerId, pluginId, pluginType, config) {
                 }
             }
             viewer.addPlugin(plugin);
+            if (pluginType === 'Icons') {
+                if (!document.getElementById('viewer')) {
+                    const canvas = viewer.canvas;
+                    if (canvas === null || canvas === void 0 ? void 0 : canvas.parentElement) {
+                        canvas.parentElement.id = 'viewer';
+                    }
+                }
+                try {
+                    window.requestAnimationFrame(() => plugin.render());
+                }
+                catch (_) { }
+            }
             if (stoppedValue !== undefined) {
                 plugin.stopped = stoppedValue;
             }
@@ -833,11 +910,42 @@ export function setPluginStopped(viewerId, pluginId, stopped) {
             if (!plugin) {
                 return false;
             }
+            const viewer = viewerInstances.get(viewerId);
+            if (plugin._icons !== undefined) {
+                const iconsContainer = document.getElementById('icons');
+                if (iconsContainer) {
+                    iconsContainer.style.display = stopped ? 'none' : '';
+                }
+            }
+            if (plugin._channels !== undefined && plugin._sources !== undefined) {
+                if (stopped && viewer) {
+                    const models = viewer.activeHandles;
+                    if (models) {
+                        for (const handle of models) {
+                            try {
+                                viewer.resetStyles(handle.id);
+                            }
+                            catch (_) { }
+                        }
+                    }
+                    viewer.draw();
+                }
+                else if (!stopped) {
+                    const channels = plugin._channels;
+                    if (channels) {
+                        for (const ch of channels) {
+                            try {
+                                plugin.renderChannel(ch.channelId);
+                            }
+                            catch (_) { }
+                        }
+                    }
+                }
+            }
             if ('stopped' in plugin) {
                 plugin.stopped = stopped;
-                return true;
             }
-            return false;
+            return true;
         }
         catch (error) {
             console.error(`Error setting plugin stopped state:`, error);
@@ -966,6 +1074,13 @@ export function disposeViewer(viewerId) {
             console.error(`Viewer with id ${viewerId} not found`);
             return false;
         }
+        const observer = resizeObservers.get(viewerId);
+        if (observer) {
+            observer.disconnect();
+            resizeObservers.delete(viewerId);
+            console.log(`ResizeObserver cleaned up for viewer ${viewerId}`);
+        }
+        viewerCanvasMap.delete(viewerId);
         const handlers = eventHandlers.get(viewerId);
         if (handlers) {
             handlers.forEach((handler, eventName) => {
@@ -1120,4 +1235,304 @@ export function getAllProductTypes(viewerId) {
         return [];
     }
 }
-//# sourceMappingURL=xbimViewerInterop.js.map
+function getPluginInstance(viewerId, pluginId) {
+    var _a;
+    const plugins = pluginInstances.get(viewerId);
+    if (!plugins)
+        return null;
+    return (_a = plugins.get(pluginId)) !== null && _a !== void 0 ? _a : null;
+}
+export function addHeatmapChannel(viewerId, pluginId, channelConfig) {
+    var _a, _b, _c, _e, _f;
+    try {
+        const plugin = getPluginInstance(viewerId, pluginId);
+        if (!plugin) {
+            console.error(`Plugin ${pluginId} not found for viewer ${viewerId}`);
+            return false;
+        }
+        const win = window;
+        let channel;
+        switch (channelConfig.channelType) {
+            case 'Continuous': {
+                const Ctor = win.ContinuousHeatmapChannel || ((_a = win.xbim) === null || _a === void 0 ? void 0 : _a.ContinuousHeatmapChannel);
+                if (!Ctor) {
+                    console.error('ContinuousHeatmapChannel not found');
+                    return false;
+                }
+                channel = new Ctor(channelConfig.channelId, channelConfig.dataType, channelConfig.name, channelConfig.description, channelConfig.property, channelConfig.unit, channelConfig.min, channelConfig.max, channelConfig.colorGradient);
+                break;
+            }
+            case 'Discrete': {
+                const Ctor = win.DiscreteHeatmapChannel || ((_b = win.xbim) === null || _b === void 0 ? void 0 : _b.DiscreteHeatmapChannel);
+                if (!Ctor) {
+                    console.error('DiscreteHeatmapChannel not found');
+                    return false;
+                }
+                channel = new Ctor(channelConfig.channelId, channelConfig.dataType, channelConfig.name, channelConfig.description, channelConfig.property, channelConfig.unit, channelConfig.values);
+                break;
+            }
+            case 'ValueRanges': {
+                const ValueRangeCtor = win.ValueRange || ((_c = win.xbim) === null || _c === void 0 ? void 0 : _c.ValueRange);
+                const Ctor = win.ValueRangesHeatmapChannel || ((_e = win.xbim) === null || _e === void 0 ? void 0 : _e.ValueRangesHeatmapChannel);
+                if (!Ctor || !ValueRangeCtor) {
+                    console.error('ValueRangesHeatmapChannel or ValueRange not found');
+                    return false;
+                }
+                const ranges = channelConfig.ranges.map(r => new ValueRangeCtor(r.min, r.max, r.color, r.label, r.priority));
+                channel = new Ctor(channelConfig.channelId, channelConfig.dataType, channelConfig.name, channelConfig.description, channelConfig.property, channelConfig.unit, ranges);
+                break;
+            }
+            case 'Constant': {
+                const Ctor = win.ConstantColorChannel || ((_f = win.xbim) === null || _f === void 0 ? void 0 : _f.ConstantColorChannel);
+                if (!Ctor) {
+                    console.error('ConstantColorChannel not found');
+                    return false;
+                }
+                channel = new Ctor(channelConfig.channelId, channelConfig.dataType, channelConfig.name, channelConfig.description, channelConfig.property, channelConfig.unit, channelConfig.color);
+                break;
+            }
+            default:
+                console.error(`Unknown channel type: ${channelConfig.channelType}`);
+                return false;
+        }
+        plugin.addChannel(channel);
+        return true;
+    }
+    catch (error) {
+        console.error('Error adding heatmap channel:', error);
+        return false;
+    }
+}
+export function addHeatmapSource(viewerId, pluginId, sourceConfig) {
+    var _a;
+    try {
+        const plugin = getPluginInstance(viewerId, pluginId);
+        if (!plugin) {
+            console.error(`Plugin ${pluginId} not found for viewer ${viewerId}`);
+            return false;
+        }
+        const win = window;
+        const HeatmapSourceCtor = win.HeatmapSource || ((_a = win.xbim) === null || _a === void 0 ? void 0 : _a.HeatmapSource);
+        if (!HeatmapSourceCtor) {
+            console.error('HeatmapSource not found');
+            return false;
+        }
+        const source = new HeatmapSourceCtor(sourceConfig.id, sourceConfig.products, sourceConfig.channelId, sourceConfig.value);
+        plugin.addSource(source);
+        return true;
+    }
+    catch (error) {
+        console.error('Error adding heatmap source:', error);
+        return false;
+    }
+}
+export function renderHeatmapChannel(viewerId, pluginId, channelId) {
+    try {
+        const plugin = getPluginInstance(viewerId, pluginId);
+        if (!plugin) {
+            console.error(`Plugin ${pluginId} not found for viewer ${viewerId}`);
+            return false;
+        }
+        plugin.renderChannel(channelId);
+        return true;
+    }
+    catch (error) {
+        console.error('Error rendering heatmap channel:', error);
+        return false;
+    }
+}
+export function renderHeatmapSource(viewerId, pluginId, sourceId) {
+    try {
+        const plugin = getPluginInstance(viewerId, pluginId);
+        if (!plugin) {
+            console.error(`Plugin ${pluginId} not found for viewer ${viewerId}`);
+            return false;
+        }
+        plugin.renderSource(sourceId);
+        return true;
+    }
+    catch (error) {
+        console.error('Error rendering heatmap source:', error);
+        return false;
+    }
+}
+export function updateHeatmapSourceValue(viewerId, pluginId, sourceId, newValue) {
+    try {
+        const plugin = getPluginInstance(viewerId, pluginId);
+        if (!plugin) {
+            console.error(`Plugin ${pluginId} not found for viewer ${viewerId}`);
+            return false;
+        }
+        const sources = plugin._sources;
+        const source = sources === null || sources === void 0 ? void 0 : sources.find((s) => s.id === sourceId);
+        if (!source) {
+            console.error(`Source ${sourceId} not found in plugin ${pluginId}`);
+            return false;
+        }
+        source.value = newValue;
+        return true;
+    }
+    catch (error) {
+        console.error('Error updating heatmap source value:', error);
+        return false;
+    }
+}
+export function addIcon(viewerId, pluginId, iconConfig) {
+    var _a;
+    try {
+        const plugin = getPluginInstance(viewerId, pluginId);
+        if (!plugin) {
+            console.error(`Plugin ${pluginId} not found for viewer ${viewerId}`);
+            return false;
+        }
+        const win = window;
+        const IconCtor = win.Icon || ((_a = win.xbim) === null || _a === void 0 ? void 0 : _a.Icon);
+        if (!IconCtor) {
+            console.error('Icon not found');
+            return false;
+        }
+        const location = iconConfig.location
+            ? new Float32Array(iconConfig.location)
+            : null;
+        const icon = new IconCtor(iconConfig.name, iconConfig.description, iconConfig.valueReadout, iconConfig.products, iconConfig.imageData, location, iconConfig.width, iconConfig.height);
+        plugin.addIcon(icon);
+        return true;
+    }
+    catch (error) {
+        console.error('Error adding icon:', error);
+        return false;
+    }
+}
+export function updateIconsLocations(viewerId, pluginId) {
+    try {
+        const plugin = getPluginInstance(viewerId, pluginId);
+        if (!plugin) {
+            console.error(`Plugin ${pluginId} not found for viewer ${viewerId}`);
+            return false;
+        }
+        plugin.updateIconsLocations();
+        return true;
+    }
+    catch (error) {
+        console.error('Error updating icon locations:', error);
+        return false;
+    }
+}
+export function setFloatingDetailsState(viewerId, pluginId, enabled) {
+    try {
+        const plugin = getPluginInstance(viewerId, pluginId);
+        if (!plugin) {
+            console.error(`Plugin ${pluginId} not found for viewer ${viewerId}`);
+            return false;
+        }
+        plugin.setFloatingDetailsState(enabled);
+        return true;
+    }
+    catch (error) {
+        console.error('Error setting floating details state:', error);
+        return false;
+    }
+}
+export function updateIconReadout(viewerId, pluginId, iconIndex, readout) {
+    try {
+        const plugin = getPluginInstance(viewerId, pluginId);
+        if (!plugin) {
+            console.error(`Plugin ${pluginId} not found for viewer ${viewerId}`);
+            return false;
+        }
+        const instances = plugin._instances;
+        if (!instances) {
+            console.error(`No _instances found in plugin ${pluginId}`);
+            return false;
+        }
+        const keys = Object.getOwnPropertyNames(instances);
+        if (iconIndex < 0 || iconIndex >= keys.length) {
+            console.error(`Icon at index ${iconIndex} not found (${keys.length} icons exist)`);
+            return false;
+        }
+        const icon = instances[keys[iconIndex]];
+        if (icon) {
+            icon.valueReadout = readout;
+        }
+        return true;
+    }
+    catch (error) {
+        console.error('Error updating icon readout:', error);
+        return false;
+    }
+}
+export function lockGridRegion(viewerId, pluginId) {
+    try {
+        const viewer = viewerInstances.get(viewerId);
+        if (!viewer)
+            return false;
+        const plugins = pluginInstances.get(viewerId);
+        if (!plugins)
+            return false;
+        const grid = plugins.get(pluginId);
+        if (!grid)
+            return false;
+        const region = viewer.getMergedRegion();
+        if (!region || region.population < 1)
+            return false;
+        const lockedRegion = {
+            bbox: Float32Array.from(region.bbox),
+            population: region.population,
+            centre: region.centre ? Float32Array.from(region.centre) : undefined
+        };
+        const originalDraw = grid.onAfterDraw.bind(grid);
+        grid.onAfterDraw = function (width, height) {
+            const realFn = viewer.getMergedRegion;
+            viewer.getMergedRegion = () => lockedRegion;
+            try {
+                originalDraw(width, height);
+            }
+            finally {
+                viewer.getMergedRegion = realFn;
+            }
+        };
+        console.log(`Grid region locked for plugin ${pluginId}`);
+        return true;
+    }
+    catch (error) {
+        console.error('Error locking grid region:', error);
+        return false;
+    }
+}
+export function updateGridColor(viewerId, pluginId, colour) {
+    try {
+        const viewer = viewerInstances.get(viewerId);
+        if (!viewer)
+            return false;
+        const plugins = pluginInstances.get(viewerId);
+        if (!plugins)
+            return false;
+        const grid = plugins.get(pluginId);
+        if (!grid)
+            return false;
+        grid.colour = colour;
+        if (!grid._blendPatched) {
+            const currentDraw = grid.onAfterDraw.bind(grid);
+            grid.onAfterDraw = function (width, height) {
+                const gl = viewer.gl;
+                const realBlendFunc = gl.blendFunc.bind(gl);
+                gl.blendFunc = function (_s, _d) {
+                    realBlendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+                };
+                try {
+                    currentDraw(width, height);
+                }
+                finally {
+                    gl.blendFunc = realBlendFunc;
+                }
+            };
+            grid._blendPatched = true;
+        }
+        return true;
+    }
+    catch (error) {
+        console.error('Error updating grid color:', error);
+        return false;
+    }
+}
+//# sourceMappingURL=XbimViewerInterop.js.map

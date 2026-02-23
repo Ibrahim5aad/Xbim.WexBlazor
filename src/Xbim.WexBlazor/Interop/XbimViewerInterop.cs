@@ -503,6 +503,106 @@ public class XbimViewerInterop : JsInteropBase
     {
         return await InvokeAsync<bool>("clearSectionBox", viewerId, pluginId);
     }
+
+    // ============================================================
+    // Heatmap Plugin Methods
+    // ============================================================
+
+    /// <summary>
+    /// Adds a channel to the Heatmap plugin.
+    /// The plugin must already be added to the viewer via AddPluginAsync.
+    /// </summary>
+    public async ValueTask<bool> AddHeatmapChannelAsync(string viewerId, string pluginId, object channelConfig)
+    {
+        return await InvokeAsync<bool>("addHeatmapChannel", viewerId, pluginId, channelConfig);
+    }
+
+    /// <summary>
+    /// Adds a data source to the Heatmap plugin.
+    /// </summary>
+    public async ValueTask<bool> AddHeatmapSourceAsync(string viewerId, string pluginId, object sourceConfig)
+    {
+        return await InvokeAsync<bool>("addHeatmapSource", viewerId, pluginId, sourceConfig);
+    }
+
+    /// <summary>
+    /// Renders (applies visualization for) a specific heatmap channel.
+    /// </summary>
+    public async ValueTask<bool> RenderHeatmapChannelAsync(string viewerId, string pluginId, string channelId)
+    {
+        return await InvokeAsync<bool>("renderHeatmapChannel", viewerId, pluginId, channelId);
+    }
+
+    /// <summary>
+    /// Renders (applies visualization for) a specific heatmap source.
+    /// </summary>
+    public async ValueTask<bool> RenderHeatmapSourceAsync(string viewerId, string pluginId, string sourceId)
+    {
+        return await InvokeAsync<bool>("renderHeatmapSource", viewerId, pluginId, sourceId);
+    }
+
+    /// <summary>
+    /// Updates an existing heatmap source's value in-place (without removing/re-adding).
+    /// Call RenderHeatmapChannelAsync afterwards to refresh the visualization.
+    /// </summary>
+    public async ValueTask<bool> UpdateHeatmapSourceValueAsync(string viewerId, string pluginId, string sourceId, object value)
+    {
+        return await InvokeAsync<bool>("updateHeatmapSourceValue", viewerId, pluginId, sourceId, value);
+    }
+
+    // ============================================================
+    // Icons Plugin Methods
+    // ============================================================
+
+    /// <summary>
+    /// Adds an icon to the Icons plugin.
+    /// </summary>
+    public async ValueTask<bool> AddIconAsync(string viewerId, string pluginId, object iconConfig)
+    {
+        return await InvokeAsync<bool>("addIcon", viewerId, pluginId, iconConfig);
+    }
+
+    /// <summary>
+    /// Updates all icon locations (recalculates from product bounding boxes).
+    /// </summary>
+    public async ValueTask<bool> UpdateIconsLocationsAsync(string viewerId, string pluginId)
+    {
+        return await InvokeAsync<bool>("updateIconsLocations", viewerId, pluginId);
+    }
+
+    /// <summary>
+    /// Enables or disables floating detail tooltips on icon hover.
+    /// </summary>
+    public async ValueTask<bool> SetFloatingDetailsStateAsync(string viewerId, string pluginId, bool enabled)
+    {
+        return await InvokeAsync<bool>("setFloatingDetailsState", viewerId, pluginId, enabled);
+    }
+
+    /// <summary>
+    /// Updates an existing icon's valueReadout text by its index in the plugin's icon list.
+    /// </summary>
+    public async ValueTask<bool> UpdateIconReadoutAsync(string viewerId, string pluginId, int iconIndex, string readout)
+    {
+        return await InvokeAsync<bool>("updateIconReadout", viewerId, pluginId, iconIndex, readout);
+    }
+
+    /// <summary>
+    /// Locks the grid plugin to the current full model region so it doesn't
+    /// resize when elements are isolated.
+    /// </summary>
+    public async ValueTask<bool> LockGridRegionAsync(string viewerId, string pluginId)
+    {
+        return await InvokeAsync<bool>("lockGridRegion", viewerId, pluginId);
+    }
+
+    /// <summary>
+    /// Updates the grid plugin's colour and fixes the blend mode so that
+    /// light-coloured grids render correctly on dark backgrounds.
+    /// </summary>
+    public async ValueTask<bool> UpdateGridColorAsync(string viewerId, string pluginId, double[] colour)
+    {
+        return await InvokeAsync<bool>("updateGridColor", viewerId, pluginId, colour);
+    }
 }
 
 /// <summary>
