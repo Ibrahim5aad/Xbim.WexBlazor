@@ -5,10 +5,12 @@
 
 A Blazor component library for building BIM (Building Information Modeling) applications. Wraps the [@xbim/viewer](https://www.npmjs.com/package/@xbim/viewer) JavaScript library for 3D model visualization in Blazor WebAssembly or Server applications.
 
+![Xbim.WexBlazor Screenshot](screenshot.png)
+
 ## Features
 
 - **3D BIM Viewer** - WebGL-based visualization of wexBIM models
-- **Plugin System** - Navigation cube, grid, section box, clipping planes
+- **Plugin System** - Navigation cube, grid, section box, clipping planes, data visualization (icons and heatmaps)
 - **Sidebar Docking** - Dockable/overlay panels with icon bar navigation
 - **Property Display** - Multi-source property aggregation (IFC, database, custom)
 - **Model Hierarchy** - Product types and spatial structure navigation
