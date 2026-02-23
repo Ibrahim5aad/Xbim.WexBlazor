@@ -596,6 +596,15 @@ public class XbimViewerInterop : JsInteropBase
     }
 
     /// <summary>
+    /// Refreshes the locked grid region to match the current merged region.
+    /// Call this after models are loaded, unloaded, started, or stopped.
+    /// </summary>
+    public async ValueTask<bool> RefreshGridRegionAsync(string viewerId, string pluginId)
+    {
+        return await InvokeAsync<bool>("refreshLockedGridRegion", viewerId, pluginId);
+    }
+
+    /// <summary>
     /// Updates the grid plugin's colour and fixes the blend mode so that
     /// light-coloured grids render correctly on dark backgrounds.
     /// </summary>

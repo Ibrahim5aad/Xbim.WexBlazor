@@ -25,7 +25,8 @@
                      BackgroundColor="@ThemeService.CurrentBackgroundColor"
                      ContainerStyle="width: 100%; height: 100vh; position: relative;"
                      OnViewerInitialized="HandleViewerInitialized"
-                     OnModelLoaded="HandleModelLoaded">
+                     OnModelLoaded="HandleModelLoaded"
+                     OnModelChanged="HandleModelChanged">
 
         <FileLoaderPanel @bind-IsVisible="_showFileLoader"
                          DemoModels="@_demoModels"
@@ -268,6 +269,26 @@
         await InvokeAsync(StateHasChanged);
     }
     
+    private async Task HandleModelChanged(ModelChangedEventArgs args)
+    {
+        if (_viewer == null || _gridPlugin == null) return;
+
+        switch (args.ChangeType)
+        {
+            case ModelChangeType.Loaded:
+            case ModelChangeType.Started:
+            case ModelChangeType.Stopped:
+                await _viewer.RefreshGridRegionAsync(_gridPlugin.Id);
+                break;
+            case ModelChangeType.Unloaded:
+                if (args.AllModels.Count > 0)
+                {
+                    await _viewer.RefreshGridRegionAsync(_gridPlugin.Id);
+                }
+                break;
+        }
+    }
+
     private void ShowFileLoader()
     {
         _showFileLoader = true;

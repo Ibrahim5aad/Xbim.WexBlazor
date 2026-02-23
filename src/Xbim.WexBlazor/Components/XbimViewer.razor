@@ -548,6 +548,19 @@
     }
 
     /// <summary>
+    /// Refreshes the locked grid region to match the current merged region.
+    /// Call this after models are loaded, unloaded, started, or stopped.
+    /// </summary>
+    public async Task<bool> RefreshGridRegionAsync(string pluginId)
+    {
+        if (_viewer != null && !string.IsNullOrEmpty(_viewerId) && _viewerInitialized && _modelLoaded)
+        {
+            return await _viewer.RefreshGridRegionAsync(_viewerId, pluginId);
+        }
+        return false;
+    }
+
+    /// <summary>
     /// Updates the grid plugin's colour at runtime and patches the blend mode
     /// so light-coloured grids render correctly on dark backgrounds.
     /// </summary>

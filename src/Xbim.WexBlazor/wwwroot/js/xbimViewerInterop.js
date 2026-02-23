@@ -35,6 +35,7 @@ const eventHandlers = new Map();
 const loadedModels = new Map();
 const resizeObservers = new Map();
 const viewerCanvasMap = new Map();
+const lockedGridRegions = new Map();
 let viewerIdCounter = 0;
 let ViewerCtor = null;
 let xbimModule = null;
@@ -1475,15 +1476,22 @@ export function lockGridRegion(viewerId, pluginId) {
         const region = viewer.getMergedRegion();
         if (!region || region.population < 1)
             return false;
-        const lockedRegion = {
-            bbox: Float32Array.from(region.bbox),
-            population: region.population,
-            centre: region.centre ? Float32Array.from(region.centre) : undefined
+        const key = `${viewerId}:${pluginId}`;
+        const state = {
+            region: {
+                bbox: Float32Array.from(region.bbox),
+                population: region.population,
+                centre: region.centre ? Float32Array.from(region.centre) : undefined
+            }
         };
+        lockedGridRegions.set(key, state);
         const originalDraw = grid.onAfterDraw.bind(grid);
         grid.onAfterDraw = function (width, height) {
+            const locked = lockedGridRegions.get(key);
+            if (!locked)
+                return originalDraw(width, height);
             const realFn = viewer.getMergedRegion;
-            viewer.getMergedRegion = () => lockedRegion;
+            viewer.getMergedRegion = () => locked.region;
             try {
                 originalDraw(width, height);
             }
@@ -1496,6 +1504,29 @@ export function lockGridRegion(viewerId, pluginId) {
     }
     catch (error) {
         console.error('Error locking grid region:', error);
+        return false;
+    }
+}
+export function refreshLockedGridRegion(viewerId, pluginId) {
+    try {
+        const viewer = viewerInstances.get(viewerId);
+        if (!viewer)
+            return false;
+        const key = `${viewerId}:${pluginId}`;
+        if (!lockedGridRegions.has(key))
+            return false;
+        const region = viewer.getMergedRegion();
+        if (!region || region.population < 1)
+            return false;
+        lockedGridRegions.get(key).region = {
+            bbox: Float32Array.from(region.bbox),
+            population: region.population,
+            centre: region.centre ? Float32Array.from(region.centre) : undefined
+        };
+        return true;
+    }
+    catch (error) {
+        console.error('Error refreshing locked grid region:', error);
         return false;
     }
 }
